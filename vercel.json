@@ -1,5 +1,6 @@
 {
     "version": 2,
+    "name": "agridash",
     "builds": [
       {
         "src": "build/web/**",
@@ -8,8 +9,32 @@
     ],
     "routes": [
       {
+        "src": "/_next/static/(.*)",
+        "dest": "/build/web/_next/static/$1"
+      },
+      {
+        "src": "/static/(.*)",
+        "dest": "/build/web/static/$1"
+      },
+      {
+        "src": "/icons/(.*)",
+        "dest": "/build/web/icons/$1"
+      },
+      {
+        "src": "/assets/(.*)",
+        "dest": "/build/web/assets/$1"
+      },
+      {
+        "src": "/version.json",
+        "dest": "/build/web/version.json"
+      },
+      {
+        "src": "/manifest.json",
+        "dest": "/build/web/manifest.json"
+      },
+      {
         "src": "/(.*)",
-        "dest": "/build/web/$1"
+        "dest": "/build/web/index.html"
       }
     ]
   }
