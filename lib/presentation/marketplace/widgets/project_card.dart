@@ -1,372 +1,267 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:sizer/sizer.dart';
-
-import '../../../core/app_export.dart';
+import 'package:agridash/core/app_export.dart';
 
 class ProjectCard extends StatelessWidget {
-  final Map<String, dynamic> project;
+  final CropProject project;
   final VoidCallback onTap;
-  final VoidCallback onFavoriteToggle;
-  final VoidCallback onShare;
-  final VoidCallback onContact;
 
   const ProjectCard({
     super.key,
     required this.project,
     required this.onTap,
-    required this.onFavoriteToggle,
-    required this.onShare,
-    required this.onContact,
   });
+
+  String _getCropEmoji(CropType cropType) {
+    switch (cropType) {
+      case CropType.maize:
+        return '🌽';
+      case CropType.rice:
+        return '🌾';
+      case CropType.tomato:
+        return '🍅';
+      case CropType.coffee:
+        return '☕';
+      case CropType.cocoa:
+        return '🍫';
+      case CropType.cotton:
+        return '👕';
+      case CropType.wheat:
+        return '🌾';
+      case CropType.soybean:
+        return '🥜';
+      default:
+        return '🌱';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bool isFavorite = project['isFavorite'] ?? false;
-    final double progress = (project['fundingProgress'] ?? 0.0).toDouble();
-    final String roi = project['expectedROI'] ?? '0%';
-    final String minimum = project['investmentMinimum'] ?? '0€';
-
     return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap();
-      },
-      onLongPress: () {
-        HapticFeedback.mediumImpact();
-        _showContextMenu(context);
-      },
-      child: Dismissible(
-        key: Key('project_${project['id']}'),
-        direction: DismissDirection.startToEnd,
-        background: Container(
-          margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-          decoration: BoxDecoration(
-            color:
-                AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            children: [
-              SizedBox(width: 6.w),
-              CustomIconWidget(
-                iconName: 'favorite',
-                color: AppTheme.lightTheme.colorScheme.primary,
-                size: 24,
-              ),
-              SizedBox(width: 3.w),
-              Text(
-                'Ajouter aux Favoris',
-                style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.lightTheme.colorScheme.primary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        onDismissed: (_) {
-          HapticFeedback.lightImpact();
-          onFavoriteToggle();
-        },
-        child: Container(
-          margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-          decoration: BoxDecoration(
-            color: AppTheme.lightTheme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.lightTheme.shadowColor.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Project image with favorite button
-              Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius:
-                        const BorderRadius.vertical(top: Radius.circular(16)),
-                    child: CustomImageWidget(
-                      imageUrl: project['image'] ?? '',
-                      width: double.infinity,
-                      height: 25.h,
-                      fit: BoxFit.cover,
-                      semanticLabel: project['semanticLabel'] ??
-                          'Agricultural project image',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Project Image
+            Stack(
+              children: [
+                Container(
+                  height: 160,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      topRight: Radius.circular(16),
+                    ),
+                    image: project.imageUrls.isNotEmpty
+                        ? DecorationImage(
+                            image: NetworkImage(project.imageUrls.first),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                    color: project.imageUrls.isEmpty
+                        ? AppConstants.primaryColor.withOpacity(0.1)
+                        : null,
+                  ),
+                  child: project.imageUrls.isEmpty
+                      ? Center(
+                          child: Text(
+                            _getCropEmoji(project.cropType),
+                            style: const TextStyle(fontSize: 40),
+                          ),
+                        )
+                      : null,
+                ),
+                
+                // Progress Badge
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${project.progressPercentage.toStringAsFixed(0)}% financé',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppConstants.primaryColor,
+                      ),
                     ),
                   ),
-                  Positioned(
-                    top: 2.h,
-                    right: 4.w,
-                    child: GestureDetector(
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        onFavoriteToggle();
-                      },
-                      child: Container(
-                        padding: EdgeInsets.all(2.w),
-                        decoration: BoxDecoration(
-                          color: AppTheme.lightTheme.colorScheme.surface
-                              .withValues(alpha: 0.9),
-                          shape: BoxShape.circle,
+                ),
+                
+                // ROI Badge
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppConstants.successColor.withOpacity(0.9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${project.estimatedROI.toStringAsFixed(0)}% ROI',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            
+            // Project Details
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title and Farmer
+                  Text(
+                    project.title,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppConstants.textColor,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  
+                  const SizedBox(height: 4),
+                  
+                  Text(
+                    'Par ${project.farmerName}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppConstants.textColor.withOpacity(0.6),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 12),
+                  
+                  // Location and Duration
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on_outlined,
+                        size: 16,
+                        color: AppConstants.textColor.withOpacity(0.5),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          project.location,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppConstants.textColor.withOpacity(0.6),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        child: CustomIconWidget(
-                          iconName: isFavorite ? 'favorite' : 'favorite_border',
-                          color: isFavorite
-                              ? Colors.red
-                              : AppTheme.lightTheme.colorScheme.onSurface
-                                  .withValues(alpha: 0.7),
-                          size: 20,
+                      ),
+                      const SizedBox(width: 16),
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        size: 16,
+                        color: AppConstants.textColor.withOpacity(0.5),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${project.daysToHarvest} jours',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppConstants.textColor.withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Investment Progress
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Objectif de financement',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppConstants.textColor.withOpacity(0.6),
+                            ),
+                          ),
+                          Text(
+                            '${project.currentInvestment.toStringAsFixed(0)} / ${project.totalInvestmentNeeded.toStringAsFixed(0)} FCFA',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppConstants.primaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      LinearProgressIndicator(
+                        value: project.progressPercentage / 100,
+                        backgroundColor: Colors.grey.shade200,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          project.progressPercentage >= 100 
+                              ? AppConstants.successColor 
+                              : AppConstants.primaryColor,
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  // Action Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: project.canInvest ? onTap : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: project.canInvest 
+                            ? AppConstants.primaryColor 
+                            : Colors.grey.shade300,
+                        foregroundColor: project.canInvest ? Colors.white : Colors.grey.shade600,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        project.canInvest ? 'Investir maintenant' : 'Financement complet',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
                   ),
                 ],
               ),
-
-              // Project details
-              Padding(
-                padding: EdgeInsets.all(4.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Title and crop type
-                    Text(
-                      project['title'] ?? 'Projet Agricole',
-                      style:
-                          AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 1.h),
-
-                    Row(
-                      children: [
-                        CustomIconWidget(
-                          iconName: 'eco',
-                          color: AppTheme.lightTheme.colorScheme.primary,
-                          size: 16,
-                        ),
-                        SizedBox(width: 1.w),
-                        Text(
-                          project['cropType'] ?? 'Culture',
-                          style:
-                              AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                            color: AppTheme.lightTheme.colorScheme.primary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const Spacer(),
-                        CustomIconWidget(
-                          iconName: 'location_on',
-                          color: AppTheme.lightTheme.colorScheme.onSurface
-                              .withValues(alpha: 0.6),
-                          size: 16,
-                        ),
-                        SizedBox(width: 1.w),
-                        Flexible(
-                          child: Text(
-                            project['location'] ?? 'Localisation',
-                            style: AppTheme.lightTheme.textTheme.bodySmall
-                                ?.copyWith(
-                              color: AppTheme.lightTheme.colorScheme.onSurface
-                                  .withValues(alpha: 0.6),
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 2.h),
-
-                    // Funding progress
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Financement',
-                              style: AppTheme.lightTheme.textTheme.bodySmall
-                                  ?.copyWith(
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            Text(
-                              '${(progress * 100).toInt()}%',
-                              style: AppTheme.lightTheme.textTheme.bodySmall
-                                  ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.lightTheme.colorScheme.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 0.5.h),
-                        LinearProgressIndicator(
-                          value: progress,
-                          backgroundColor: AppTheme.lightTheme.dividerColor,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            AppTheme.lightTheme.colorScheme.primary,
-                          ),
-                          minHeight: 6,
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 2.h),
-
-                    // ROI and minimum investment
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 3.w, vertical: 1.h),
-                            decoration: BoxDecoration(
-                              color: AppTheme.lightTheme.colorScheme.secondary
-                                  .withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'ROI Attendu',
-                                  style: AppTheme.lightTheme.textTheme.bodySmall
-                                      ?.copyWith(
-                                    color: AppTheme
-                                        .lightTheme.colorScheme.onSurface
-                                        .withValues(alpha: 0.6),
-                                  ),
-                                ),
-                                Text(
-                                  roi,
-                                  style: AppTheme
-                                      .lightTheme.textTheme.titleSmall
-                                      ?.copyWith(
-                                    color: AppTheme
-                                        .lightTheme.colorScheme.secondary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 3.w),
-                        Expanded(
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 3.w, vertical: 1.h),
-                            decoration: BoxDecoration(
-                              color: AppTheme.lightTheme.colorScheme.tertiary
-                                  .withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Minimum',
-                                  style: AppTheme.lightTheme.textTheme.bodySmall
-                                      ?.copyWith(
-                                    color: AppTheme
-                                        .lightTheme.colorScheme.onSurface
-                                        .withValues(alpha: 0.6),
-                                  ),
-                                ),
-                                Text(
-                                  minimum,
-                                  style: AppTheme
-                                      .lightTheme.textTheme.titleSmall
-                                      ?.copyWith(
-                                    color: AppTheme
-                                        .lightTheme.colorScheme.tertiary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showContextMenu(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: BoxDecoration(
-          color: AppTheme.lightTheme.colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 12.w,
-              height: 0.5.h,
-              margin: EdgeInsets.symmetric(vertical: 2.h),
-              decoration: BoxDecoration(
-                color: AppTheme.lightTheme.dividerColor,
-                borderRadius: BorderRadius.circular(2),
-              ),
             ),
-            ListTile(
-              leading: CustomIconWidget(
-                iconName: 'favorite',
-                color: AppTheme.lightTheme.colorScheme.primary,
-                size: 24,
-              ),
-              title: const Text('Ajouter aux Favoris'),
-              onTap: () {
-                Navigator.pop(context);
-                onFavoriteToggle();
-              },
-            ),
-            ListTile(
-              leading: CustomIconWidget(
-                iconName: 'share',
-                color: AppTheme.lightTheme.colorScheme.secondary,
-                size: 24,
-              ),
-              title: const Text('Partager'),
-              onTap: () {
-                Navigator.pop(context);
-                onShare();
-              },
-            ),
-            ListTile(
-              leading: CustomIconWidget(
-                iconName: 'message',
-                color: AppTheme.lightTheme.colorScheme.tertiary,
-                size: 24,
-              ),
-              title: const Text('Contacter Agriculteur'),
-              onTap: () {
-                Navigator.pop(context);
-                onContact();
-              },
-            ),
-            SizedBox(height: 2.h),
           ],
         ),
       ),

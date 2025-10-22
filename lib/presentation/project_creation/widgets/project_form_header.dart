@@ -1,93 +1,102 @@
-import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
-
-import '../../../core/app_export.dart';
+import 'package:agridash/core/app_export.dart';
 
 class ProjectFormHeader extends StatelessWidget {
-  final int currentStep;
-  final int totalSteps;
+  final int currentPage;
+  final int totalPages;
+  final VoidCallback onBack;
 
   const ProjectFormHeader({
     super.key,
-    required this.currentStep,
-    required this.totalSteps,
+    required this.currentPage,
+    required this.totalPages,
+    required this.onBack,
   });
+
+  String _getPageTitle(int page) {
+    switch (page) {
+      case 0:
+        return 'Informations de base';
+      case 1:
+        return 'Détails du projet';
+      case 2:
+        return 'Finalisation';
+      default:
+        return 'Création de projet';
+    }
+  }
+
+  String _getPageSubtitle(int page) {
+    switch (page) {
+      case 0:
+        return 'Décrivez votre projet agricole';
+      case 1:
+        return 'Définissez les détails et le financement';
+      case 2:
+        return 'Ajoutez les informations finales';
+      default:
+        return 'Créez votre projet d\'agriculture';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 3.h),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.lightTheme.colorScheme.primary,
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(20),
-          bottomRight: Radius.circular(20),
-        ),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: SafeArea(
-        child: Column(
-          children: [
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    padding: EdgeInsets.all(2.w),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: CustomIconWidget(
-                      iconName: 'arrow_back_ios',
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    'CRÉATION DE PROJET AGRICOLE',
-                    textAlign: TextAlign.center,
-                    style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16.sp,
-                    ),
-                  ),
-                ),
-                SizedBox(width: 10.w),
-              ],
-            ),
-            SizedBox(height: 2.h),
-            Container(
-              width: double.infinity,
-              height: 6,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(3),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Back button and progress
+          Row(
+            children: [
+              IconButton(
+                onPressed: onBack,
+                icon: const Icon(Icons.arrow_back_rounded),
+                color: AppConstants.textColor,
               ),
-              child: FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: currentStep / totalSteps,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
+              const Spacer(),
+              Text(
+                'Étape ${currentPage + 1}/$totalPages',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppConstants.textColor.withOpacity(0.6),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
+            ],
+          ),
+          
+          const SizedBox(height: 8),
+          
+          // Title and subtitle
+          Text(
+            _getPageTitle(currentPage),
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppConstants.textColor,
             ),
-            SizedBox(height: 1.h),
-            Text(
-              'Étape $currentStep sur $totalSteps',
-              style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.9),
-                fontSize: 12.sp,
-              ),
+          ),
+          
+          const SizedBox(height: 4),
+          
+          Text(
+            _getPageSubtitle(currentPage),
+            style: TextStyle(
+              fontSize: 16,
+              color: AppConstants.textColor.withOpacity(0.6),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

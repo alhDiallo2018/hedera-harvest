@@ -1,160 +1,142 @@
-import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
-
-import '../../../core/app_export.dart';
+import 'package:agridash/core/app_export.dart';
 
 class ProjectSummaryCardWidget extends StatelessWidget {
-  final int activeProjects;
-  final int completedProjects;
-  final double totalInvestment;
-  final VoidCallback onTap;
+  final Map<String, dynamic> portfolioSummary;
+  final UserRole userRole;
 
   const ProjectSummaryCardWidget({
     super.key,
-    required this.activeProjects,
-    required this.completedProjects,
-    required this.totalInvestment,
-    required this.onTap,
+    required this.portfolioSummary,
+    required this.userRole,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(4.w),
-        margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppTheme.lightTheme.colorScheme.primary,
-              AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.8),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.lightTheme.colorScheme.primary
-                  .withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            userRole == UserRole.farmer ? 'Résumé de mes Projets' : 'Aperçu des Projets',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppConstants.textColor,
             ),
-          ],
+          ),
+          const SizedBox(height: 16),
+          
+          if (userRole == UserRole.farmer) _buildFarmerSummary(),
+          if (userRole == UserRole.admin) _buildAdminSummary(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFarmerSummary() {
+    return Row(
+      children: [
+        _buildSummaryItem(
+          'Total',
+          '${portfolioSummary['totalProjects'] ?? 0}',
+          'Projets',
+          AppConstants.primaryColor,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CustomIconWidget(
-                  iconName: 'agriculture',
-                  color: Colors.white,
-                  size: 24,
-                ),
-                SizedBox(width: 2.w),
-                Expanded(
-                  child: Text(
-                    'Projets Actifs',
-                    style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                CustomIconWidget(
-                  iconName: 'arrow_forward_ios',
-                  color: Colors.white.withValues(alpha: 0.7),
-                  size: 16,
-                ),
-              ],
-            ),
-            SizedBox(height: 2.h),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '$activeProjects',
-                        style: AppTheme.lightTheme.textTheme.headlineMedium
-                            ?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'En cours',
-                        style:
-                            AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 1,
-                  height: 6.h,
-                  color: Colors.white.withValues(alpha: 0.3),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Text(
-                        '$completedProjects',
-                        style: AppTheme.lightTheme.textTheme.headlineMedium
-                            ?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'Terminés',
-                        style:
-                            AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 1,
-                  height: 6.h,
-                  color: Colors.white.withValues(alpha: 0.3),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '€${totalInvestment.toStringAsFixed(0)}K',
-                        style:
-                            AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'Investis',
-                        style:
-                            AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
+        _buildSummaryItem(
+          'Actifs',
+          '${portfolioSummary['activeProjects'] ?? 0}',
+          'Projets',
+          AppConstants.successColor,
         ),
+        _buildSummaryItem(
+          'Terminés',
+          '${portfolioSummary['completedProjects'] ?? 0}',
+          'Projets',
+          AppConstants.accentColor,
+        ),
+        _buildSummaryItem(
+          'ROI Moyen',
+          '${portfolioSummary['averageROI']?.toStringAsFixed(1) ?? '0'}%',
+          'Retour',
+          AppConstants.warningColor,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAdminSummary() {
+    return Row(
+      children: [
+        _buildSummaryItem(
+          'Total',
+          '${portfolioSummary['totalProjects'] ?? 0}',
+          'Projets',
+          AppConstants.primaryColor,
+        ),
+        _buildSummaryItem(
+          'Investissements',
+          '${portfolioSummary['totalInvestments']?.toStringAsFixed(0) ?? '0'}',
+          'FCFA',
+          AppConstants.successColor,
+        ),
+        _buildSummaryItem(
+          'Utilisateurs',
+          '${portfolioSummary['activeUsers'] ?? 0}',
+          'Actifs',
+          AppConstants.accentColor,
+        ),
+        _buildSummaryItem(
+          'Taux Réussite',
+          '85%',
+          'Projets',
+          AppConstants.warningColor,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryItem(String label, String value, String unit, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: AppConstants.textColor.withOpacity(0.6),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Text(
+            unit,
+            style: TextStyle(
+              fontSize: 10,
+              color: AppConstants.textColor.withOpacity(0.4),
+            ),
+          ),
+        ],
       ),
     );
   }

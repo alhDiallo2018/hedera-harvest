@@ -1,75 +1,77 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:sizer/sizer.dart';
-
-import '../core/app_export.dart';
-import '../widgets/custom_error_widget.dart';
+import 'package:agridash/core/app_export.dart';
+import 'package:agridash/core/hedera_service.dart';
+import 'package:agridash/presentation/splash_screen/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize services
+  await AuthService().initialize();
+  await HederaService().initialize();
+  await AuthService().initializeDemoData();
 
-  bool _hasShownError = false;
-
-  // 🚨 CRITICAL: Custom error handling - DO NOT REMOVE
-  ErrorWidget.builder = (FlutterErrorDetails details) {
-    if (!_hasShownError) {
-      _hasShownError = true;
-
-      // Reset flag after 3 seconds to allow error widget on new screens
-      Future.delayed(Duration(seconds: 5), () {
-        _hasShownError = false;
-      });
-
-      return CustomErrorWidget(
-        errorDetails: details,
-      );
-    }
-    return SizedBox.shrink();
-  };
-
-  // 🚨 CRITICAL: Device orientation lock - DO NOT REMOVE
-  Future.wait([
-    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
-  ]).then((value) {
-    runApp(MyApp());
-  });
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  final NavigationService _navigationService = NavigationService();
+
+  MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return Sizer(builder: (context, orientation, screenType) {
-      return MaterialApp(
-        title: 'agridash',
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.light,
-        
-        // 🚨 CRITICAL: NEVER REMOVE OR MODIFY
-        builder: (context, child) {
-          return MediaQuery(
-            data: MediaQuery.of(context).copyWith(
-              textScaler: TextScaler.linear(1.0),
-            ),
-            child: child!,
-          );
-        },
-        // 🚨 END CRITICAL SECTION
-        
-        debugShowCheckedModeBanner: false,
-        
-        // CORRECTION : Configuration complète des routes
-        initialRoute: AppRoutes.splash,
-        routes: AppRoutes.routes,
-        onGenerateRoute: AppRoutes.generateRoute, // AJOUT CRITIQUE
-        onUnknownRoute: (settings) => MaterialPageRoute(
-          builder: (context) => Scaffold(
-            body: Center(
-              child: Text('Route ${settings.name} non trouvée'),
-            ),
+    return MaterialApp(
+      title: 'AgroSense',
+      theme: ThemeData(
+        primarySwatch: Colors.green,
+        fontFamily: 'Inter',
+        scaffoldBackgroundColor: AppConstants.backgroundColor,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.black87),
+          titleTextStyle: TextStyle(
+            color: AppConstants.textColor,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
           ),
         ),
-      );
-    });
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+            borderSide: BorderSide(color: AppConstants.primaryColor),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+        ),
+      ),
+      navigatorKey: _navigationService.navigatorKey,
+      initialRoute: AppRoutes.getInitialRoute(),
+      onGenerateRoute: (settings) {
+        final routes = AppRoutes.routes(context);
+        final builder = routes[settings.name];
+        
+        if (builder != null) {
+          return MaterialPageRoute(
+            builder: builder,
+            settings: settings,
+          );
+        }
+        
+        // Fallback to splash screen
+        return MaterialPageRoute(
+          builder: (context) => const SplashScreen(),
+        );
+      },
+      debugShowCheckedModeBanner: false,
+    );
   }
 }

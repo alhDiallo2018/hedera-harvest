@@ -1,15 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:sizer/sizer.dart';
+import 'package:agridash/core/app_export.dart';
 
-import '../../core/app_export.dart';
-import './widgets/biometric_prompt_widget.dart';
-import './widgets/login_form_widget.dart';
-import './widgets/login_header_widget.dart';
-import './widgets/social_login_widget.dart';
+import 'widgets/index.dart';
 
-/// Login Screen for agricultural professionals and investors
-/// Provides secure authentication with biometric support
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -18,130 +10,94 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  bool _isLoading = false;
-  bool _showBiometricPrompt = false;
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _authService = AuthService();
 
-  // Mock credentials for testing
-  final Map<String, Map<String, dynamic>> _mockCredentials = {
-    'farmer@agridash.com': {
-      'password': 'farmer123',
-      'type': 'farmer',
-      'name': 'Jean Dupont'
-    },
-    'investor@agridash.com': {
-      'password': 'investor123',
-      'type': 'investor',
-      'name': 'Marie Martin'
-    },
-    'admin@agridash.com': {
-      'password': 'admin123',
-      'type': 'admin',
-      'name': 'Pierre Durand'
-    },
-  };
+  UserRole _selectedRole = UserRole.farmer;
+  bool _isLoading = false;
+  bool _obscurePassword = true;
 
   @override
   void initState() {
     super.initState();
-    // Set status bar style
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-      ),
-    );
+    // Demo credentials for testing
+    _emailController.text = 'farmer@agrosense.com';
+    _passwordController.text = 'password123';
   }
 
-  Future<void> _handleLogin(String email, String password) async {
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
     setState(() {
       _isLoading = true;
     });
 
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final result = await _authService.login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        role: _selectedRole,
+      );
 
-    // Check mock credentials
-    if (_mockCredentials.containsKey(email.toLowerCase())) {
-      final userCredentials = _mockCredentials[email.toLowerCase()]!;
-      if (userCredentials['password'] == password) {
-        // Successful login
-        HapticFeedback.mediumImpact();
+      setState(() {
+        _isLoading = false;
+      });
 
-        setState(() {
-          _isLoading = false;
-          _showBiometricPrompt = true;
-        });
+      if (result['success'] == true) {
+        NavigationService().showSuccessDialog('Connexion réussie !');
+        await Future.delayed(const Duration(milliseconds: 1500));
+        NavigationService().toDashboard();
+      } else {
+        NavigationService().showErrorDialog(result['error'] ?? 'Erreur de connexion');
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      NavigationService().showErrorDialog('Erreur: $e');
+    }
+  }
 
-        // Show biometric prompt after successful login
-        _showBiometricBottomSheet(userCredentials);
-        return;
+  void _handleRoleChange(UserRole? role) {
+    if (role != null) {
+      setState(() {
+        _selectedRole = role;
+      });
+      
+      // Update demo credentials based on role
+      switch (role) {
+        case UserRole.farmer:
+          _emailController.text = 'farmer@agrosense.com';
+          break;
+        case UserRole.investor:
+          _emailController.text = 'investor@agrosense.com';
+          break;
+        case UserRole.admin:
+          _emailController.text = 'admin@agrosense.com';
+          break;
       }
     }
-
-    // Failed login
-    setState(() {
-      _isLoading = false;
-    });
-
-    HapticFeedback.heavyImpact();
-    _showErrorDialog('Identifiants incorrects',
-        'Veuillez vérifier votre email et mot de passe.');
   }
 
-  void _showBiometricBottomSheet(Map<String, dynamic> userCredentials) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => BiometricPromptWidget(
-        onBiometricLogin: () => _handleBiometricSetup(userCredentials),
-        onSkip: () => _navigateToDashboard(userCredentials),
-      ),
-    );
-  }
-
-  void _handleBiometricSetup(Map<String, dynamic> userCredentials) {
-    Navigator.pop(context); // Close bottom sheet
-    HapticFeedback.mediumImpact();
-
-    // Simulate biometric setup
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Authentification biométrique activée'),
-        backgroundColor: AppTheme.lightTheme.colorScheme.primary,
-      ),
-    );
-
-    _navigateToDashboard(userCredentials);
-  }
-
-  void _navigateToDashboard(Map<String, dynamic> userCredentials) {
-    Navigator.pop(context); // Close bottom sheet if open
-    
-    // Récupérer le type d'utilisateur et le transmettre au dashboard
-    final userType = userCredentials['type'] as String;
-    final userName = userCredentials['name'] as String;
-    
-    // Utiliser AppRoutes.dashboardHome au lieu de '/dashboard-home'
-    Navigator.pushReplacementNamed(
-      context, 
-      AppRoutes.dashboardHome, // Utiliser la constante
-      arguments: {
-        'userType': userType,
-        'userName': userName,
-      }
-    );
-  }
-
-  void _showErrorDialog(String title, String message) {
+  void _navigateToRegister() {
+    // For demo, we'll show a dialog instead of navigation
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
+        title: const Text('Inscription'),
+        content: const Text('Fonctionnalité d\'inscription en cours de développement. Utilisez les comptes de démonstration pour tester l\'application.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.of(context).pop(),
             child: const Text('OK'),
           ),
         ],
@@ -149,108 +105,190 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _handleSignUp() {
-    HapticFeedback.lightImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Inscription bientôt disponible'),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppConstants.defaultPadding),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                const LoginHeaderWidget(),
+                
+                const SizedBox(height: 32),
+                
+                // Role Selection
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Je suis :',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppConstants.textColor,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          _buildRoleButton(UserRole.farmer, 'Agriculteur', '👨‍🌾'),
+                          const SizedBox(width: 12),
+                          _buildRoleButton(UserRole.investor, 'Investisseur', '💼'),
+                          const SizedBox(width: 12),
+                          _buildRoleButton(UserRole.admin, 'Admin', '⚙️'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 24),
+                
+                LoginFormWidget(
+                  emailController: _emailController,
+                  passwordController: _passwordController,
+                  obscurePassword: _obscurePassword,
+                  onTogglePassword: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  }, onLogin: (String email, String password) {  },
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Login Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleLogin,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppConstants.primaryColor,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppConstants.defaultBorderRadius),
+                      ),
+                      elevation: 2,
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text(
+                            'Se connecter',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Forgot Password
+                TextButton(
+                  onPressed: () {
+                    NavigationService().showErrorDialog('Fonctionnalité de réinitialisation de mot de passe en cours de développement.');
+                  },
+                  child: Text(
+                    'Mot de passe oublié ?',
+                    style: TextStyle(
+                      color: AppConstants.primaryColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 32),
+                
+                // Social Login
+                const SocialLoginWidget(),
+                
+                const SizedBox(height: 32),
+                
+                // Register Link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Nouveau sur AgroSense ? ',
+                      style: TextStyle(
+                        color: AppConstants.textColor.withOpacity(0.7),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: _navigateToRegister,
+                      child: Text(
+                        'Créer un compte',
+                        style: TextStyle(
+                          color: AppConstants.primaryColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.lightTheme.colorScheme.surface,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height -
-                  MediaQuery.of(context).padding.top -
-                  MediaQuery.of(context).padding.bottom,
+  Widget _buildRoleButton(UserRole role, String label, String emoji) {
+    final isSelected = _selectedRole == role;
+    
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _handleRoleChange(role),
+        child: Container(
+          height: 80,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isSelected ? AppConstants.primaryColor.withOpacity(0.1) : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? AppConstants.primaryColor : Colors.transparent,
+              width: 2,
             ),
-            child: Column(
-              children: [
-                // Header with branding
-                const LoginHeaderWidget(),
-
-                SizedBox(height: 4.h),
-
-                // Welcome text
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6.w),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Bienvenue',
-                        style: AppTheme.lightTheme.textTheme.headlineSmall
-                            ?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 1.h),
-                      Text(
-                        'Connectez-vous à votre compte AgriDash',
-                        style:
-                            AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.lightTheme.colorScheme.onSurface
-                              .withOpacity(0.7),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                emoji,
+                style: const TextStyle(fontSize: 20),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: isSelected ? AppConstants.primaryColor : AppConstants.textColor,
                 ),
-
-                SizedBox(height: 3.h),
-
-                // Login Form
-                LoginFormWidget(
-                  onLogin: _handleLogin,
-                  isLoading: _isLoading,
-                ),
-
-                SizedBox(height: 3.h),
-
-                // Social Login Options
-                const SocialLoginWidget(),
-
-                SizedBox(height: 4.h),
-
-                // Sign Up Link
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6.w),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Nouvel utilisateur? ',
-                        style:
-                            AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.lightTheme.colorScheme.onSurface
-                              .withOpacity(0.7),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: _handleSignUp,
-                        child: Text(
-                          'S\'inscrire',
-                          style: AppTheme.lightTheme.textTheme.bodyMedium
-                              ?.copyWith(
-                            color: AppTheme.lightTheme.colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                SizedBox(height: 4.h),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

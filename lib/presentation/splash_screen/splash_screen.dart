@@ -1,8 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:sizer/sizer.dart';
-
-import '../../theme/app_theme.dart';
+import 'package:agridash/core/app_export.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,118 +8,159 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeInOut,
-    );
-    _controller.forward();
-
-    // Simulation du chargement des données
-    _navigateToHome();
+    _initializeAnimations();
+    _navigateToNextScreen();
   }
 
-  void _navigateToHome() async {
-    await Future.delayed(const Duration(seconds: 10));
-    if (mounted) {
-      Navigator.of(context).pushReplacementNamed('/login');
+  void _initializeAnimations() {
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
+      ),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.3, 1.0, curve: Curves.elasticOut),
+      ),
+    );
+
+    _animationController.forward();
+  }
+
+  void _navigateToNextScreen() async {
+    // Simulate some initialization time
+    await Future.delayed(const Duration(seconds: 3));
+
+    final authService = AuthService();
+    
+    if (authService.isLoggedIn) {
+      NavigationService().toDashboard();
+    } else {
+      NavigationService().toLogin();
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.primaryLight,
+      backgroundColor: AppConstants.primaryColor,
       body: Center(
-        child: ScaleTransition(
-          scale: _animation,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Logo de l'application
-              Container(
-                width: 30.w,
-                height: 30.w,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      spreadRadius: 2,
+        child: AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            return Opacity(
+              opacity: _fadeAnimation.value,
+              child: Transform.scale(
+                scale: _scaleAnimation.value,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // App Logo
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.eco,
+                        size: 60,
+                        color: AppConstants.primaryColor,
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 32),
+                    
+                    // App Name
+                    Text(
+                      'AgroSense',
+                      style: TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 8),
+                    
+                    // Tagline
+                    Text(
+                      'Investir dans l\'agriculture durable',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white.withOpacity(0.9),
+                        fontWeight: FontWeight.w300,
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 48),
+                    
+                    // Loading Indicator
+                    SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white.withOpacity(0.8)),
+                        strokeWidth: 3,
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // Loading Text
+                    Text(
+                      'Initialisation...',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 60),
+                    
+                    // Version Info
+                    Text(
+                      'Version ${AppConstants.appVersion}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withOpacity(0.5),
+                      ),
                     ),
                   ],
                 ),
-                child: Icon(
-                  Icons.agriculture,
-                  size: 20.w,
-                  color: AppTheme.primaryLight,
-                ),
               ),
-              SizedBox(height: 4.h),
-              
-              // Titre de l'application
-              Text(
-                'AgriDash',
-                style: GoogleFonts.roboto(
-                  fontSize: 32.sp,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              SizedBox(height: 1.h),
-              
-              // Sous-titre
-              Text(
-                'Agricultural Fintech Platform',
-                style: GoogleFonts.roboto(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.white.withOpacity(0.9),
-                  letterSpacing: 0.5,
-                ),
-              ),
-              SizedBox(height: 6.h),
-              
-              // Indicateur de chargement
-              SizedBox(
-                width: 20.w,
-                child: LinearProgressIndicator(
-                  backgroundColor: Colors.white.withOpacity(0.3),
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              SizedBox(height: 2.h),
-              
-              // Texte de chargement
-              Text(
-                'Chargement...',
-                style: GoogleFonts.roboto(
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.w400,
-                  color: Colors.white.withOpacity(0.8),
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

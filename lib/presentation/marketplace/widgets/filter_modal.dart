@@ -1,15 +1,22 @@
-import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
-
-import '../../../core/app_export.dart';
+import 'package:agridash/core/app_export.dart';
 
 class FilterModal extends StatefulWidget {
-  final Map<String, dynamic> currentFilters;
-  final Function(Map<String, dynamic>) onFiltersChanged;
+  final String selectedCategory;
+  final List<String> categories;
+  final double minInvestment;
+  final double maxInvestment;
+  final double minROI;
+  final double maxROI;
+  final Function(String, double, double, double, double) onFiltersChanged;
 
   const FilterModal({
     super.key,
-    required this.currentFilters,
+    required this.selectedCategory,
+    required this.categories,
+    required this.minInvestment,
+    required this.maxInvestment,
+    required this.minROI,
+    required this.maxROI,
     required this.onFiltersChanged,
   });
 
@@ -18,400 +25,221 @@ class FilterModal extends StatefulWidget {
 }
 
 class _FilterModalState extends State<FilterModal> {
-  late Map<String, dynamic> _filters;
-
-  final List<String> _cropTypes = [
-    'Maïs',
-    'Blé',
-    'Soja',
-    'Tournesol',
-    'Colza',
-    'Orge',
-    'Avoine',
-    'Légumes'
-  ];
-
-  final List<String> _locations = [
-    'Île-de-France',
-    'Normandie',
-    'Bretagne',
-    'Pays de la Loire',
-    'Centre-Val de Loire',
-    'Bourgogne-Franche-Comté',
-    'Grand Est',
-    'Hauts-de-France',
-    'Nouvelle-Aquitaine',
-    'Occitanie',
-    'Auvergne-Rhône-Alpes',
-    'Provence-Alpes-Côte d\'Azur'
-  ];
+  late String _selectedCategory;
+  late double _minInvestment;
+  late double _maxInvestment;
+  late double _minROI;
+  late double _maxROI;
 
   @override
   void initState() {
     super.initState();
-    _filters = Map<String, dynamic>.from(widget.currentFilters);
+    _selectedCategory = widget.selectedCategory;
+    _minInvestment = widget.minInvestment;
+    _maxInvestment = widget.maxInvestment;
+    _minROI = widget.minROI;
+    _maxROI = widget.maxROI;
+  }
+
+  void _applyFilters() {
+    widget.onFiltersChanged(
+      _selectedCategory,
+      _minInvestment,
+      _maxInvestment,
+      _minROI,
+      _maxROI,
+    );
+    NavigationService().goBack();
+  }
+
+  void _resetFilters() {
+    setState(() {
+      _selectedCategory = 'Tous';
+      _minInvestment = 0;
+      _maxInvestment = 100000;
+      _minROI = 0;
+      _maxROI = 50;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 90.h,
-      decoration: BoxDecoration(
-        color: AppTheme.lightTheme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          Container(
-            padding: EdgeInsets.all(4.w),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: AppTheme.lightTheme.dividerColor,
-                  width: 1,
-                ),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    setState(() {
-                      _filters.clear();
-                    });
-                  },
-                  child: Text(
-                    'Effacer tout',
-                    style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.lightTheme.colorScheme.primary,
-                    ),
-                  ),
-                ),
-                Text(
-                  'Filtres',
-                  style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {
-                    widget.onFiltersChanged(_filters);
-                    Navigator.pop(context);
-                  },
-                  child: Text(
-                    'Appliquer',
-                    style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.lightTheme.colorScheme.primary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Filter content
-          Expanded(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(4.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Crop type section
-                  _buildFilterSection(
-                    title: 'Type de Culture',
-                    isExpanded: _filters['cropTypeExpanded'] ?? true,
-                    onToggle: () {
-                      setState(() {
-                        _filters['cropTypeExpanded'] =
-                            !(_filters['cropTypeExpanded'] ?? true);
-                      });
-                    },
-                    child: _buildCropTypeFilter(),
-                  ),
-                  SizedBox(height: 3.h),
-
-                  // Location section
-                  _buildFilterSection(
-                    title: 'Localisation',
-                    isExpanded: _filters['locationExpanded'] ?? true,
-                    onToggle: () {
-                      setState(() {
-                        _filters['locationExpanded'] =
-                            !(_filters['locationExpanded'] ?? true);
-                      });
-                    },
-                    child: _buildLocationFilter(),
-                  ),
-                  SizedBox(height: 3.h),
-
-                  // Investment range section
-                  _buildFilterSection(
-                    title: 'Montant d\'Investissement',
-                    isExpanded: _filters['investmentExpanded'] ?? true,
-                    onToggle: () {
-                      setState(() {
-                        _filters['investmentExpanded'] =
-                            !(_filters['investmentExpanded'] ?? true);
-                      });
-                    },
-                    child: _buildInvestmentRangeFilter(),
-                  ),
-                  SizedBox(height: 3.h),
-
-                  // Duration section
-                  _buildFilterSection(
-                    title: 'Durée du Projet',
-                    isExpanded: _filters['durationExpanded'] ?? true,
-                    onToggle: () {
-                      setState(() {
-                        _filters['durationExpanded'] =
-                            !(_filters['durationExpanded'] ?? true);
-                      });
-                    },
-                    child: _buildDurationFilter(),
-                  ),
-                  SizedBox(height: 3.h),
-
-                  // ROI section
-                  _buildFilterSection(
-                    title: 'ROI Attendu',
-                    isExpanded: _filters['roiExpanded'] ?? true,
-                    onToggle: () {
-                      setState(() {
-                        _filters['roiExpanded'] =
-                            !(_filters['roiExpanded'] ?? true);
-                      });
-                    },
-                    child: _buildROIFilter(),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterSection({
-    required String title,
-    required bool isExpanded,
-    required VoidCallback onToggle,
-    required Widget child,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        GestureDetector(
-          onTap: onToggle,
-          child: Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                title,
-                style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+                'Filtres',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppConstants.textColor,
                 ),
               ),
-              CustomIconWidget(
-                iconName: isExpanded ? 'expand_less' : 'expand_more',
-                color: AppTheme.lightTheme.colorScheme.onSurface,
-                size: 24,
+              TextButton(
+                onPressed: _resetFilters,
+                child: Text(
+                  'Réinitialiser',
+                  style: TextStyle(
+                    color: AppConstants.primaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
             ],
           ),
-        ),
-        if (isExpanded) ...[
-          SizedBox(height: 2.h),
-          child,
+          
+          const SizedBox(height: 24),
+          
+          // Category Section
+          Text(
+            'Type de Culture',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppConstants.textColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: widget.categories.map((category) {
+              final isSelected = _selectedCategory == category;
+              
+              return FilterChip(
+                selected: isSelected,
+                label: Text(category),
+                onSelected: (selected) {
+                  setState(() {
+                    _selectedCategory = selected ? category : 'Tous';
+                  });
+                },
+                backgroundColor: Colors.white,
+                selectedColor: AppConstants.primaryColor.withOpacity(0.1),
+                checkmarkColor: AppConstants.primaryColor,
+                labelStyle: TextStyle(
+                  color: isSelected ? AppConstants.primaryColor : AppConstants.textColor,
+                  fontWeight: FontWeight.w500,
+                ),
+                side: BorderSide(
+                  color: isSelected ? AppConstants.primaryColor : Colors.grey.shade300,
+                ),
+              );
+            }).toList(),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Investment Range
+          Text(
+            'Investissement (FCFA)',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppConstants.textColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          RangeSlider(
+            values: RangeValues(_minInvestment, _maxInvestment),
+            min: 0,
+            max: 100000,
+            divisions: 10,
+            labels: RangeLabels(
+              '${_minInvestment.toInt()} FCFA',
+              '${_maxInvestment.toInt()} FCFA',
+            ),
+            onChanged: (values) {
+              setState(() {
+                _minInvestment = values.start;
+                _maxInvestment = values.end;
+              });
+            },
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('${_minInvestment.toInt()} FCFA'),
+              Text('${_maxInvestment.toInt()} FCFA'),
+            ],
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // ROI Range
+          Text(
+            'ROI Estimé (%)',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppConstants.textColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          RangeSlider(
+            values: RangeValues(_minROI, _maxROI),
+            min: 0,
+            max: 50,
+            divisions: 10,
+            labels: RangeLabels(
+              '${_minROI.toInt()}%',
+              '${_maxROI.toInt()}%',
+            ),
+            onChanged: (values) {
+              setState(() {
+                _minROI = values.start;
+                _maxROI = values.end;
+              });
+            },
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('${_minROI.toInt()}%'),
+              Text('${_maxROI.toInt()}%'),
+            ],
+          ),
+          
+          const SizedBox(height: 32),
+          
+          // Apply Button
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton(
+              onPressed: _applyFilters,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppConstants.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Appliquer les filtres',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
         ],
-      ],
-    );
-  }
-
-  Widget _buildCropTypeFilter() {
-    final selectedCrops = (_filters['cropTypes'] as List<String>?) ?? [];
-
-    return Wrap(
-      spacing: 2.w,
-      runSpacing: 1.h,
-      children: _cropTypes.map((crop) {
-        final isSelected = selectedCrops.contains(crop);
-        return FilterChip(
-          label: Text(crop),
-          selected: isSelected,
-          onSelected: (selected) {
-            setState(() {
-              if (selected) {
-                selectedCrops.add(crop);
-              } else {
-                selectedCrops.remove(crop);
-              }
-              _filters['cropTypes'] = selectedCrops;
-            });
-          },
-          backgroundColor: AppTheme.lightTheme.colorScheme.surface,
-          selectedColor:
-              AppTheme.lightTheme.colorScheme.primary.withValues(alpha: 0.2),
-          checkmarkColor: AppTheme.lightTheme.colorScheme.primary,
-          labelStyle: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-            color: isSelected
-                ? AppTheme.lightTheme.colorScheme.primary
-                : AppTheme.lightTheme.colorScheme.onSurface,
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildLocationFilter() {
-    final selectedLocations = (_filters['locations'] as List<String>?) ?? [];
-
-    return Wrap(
-      spacing: 2.w,
-      runSpacing: 1.h,
-      children: _locations.map((location) {
-        final isSelected = selectedLocations.contains(location);
-        return FilterChip(
-          label: Text(location),
-          selected: isSelected,
-          onSelected: (selected) {
-            setState(() {
-              if (selected) {
-                selectedLocations.add(location);
-              } else {
-                selectedLocations.remove(location);
-              }
-              _filters['locations'] = selectedLocations;
-            });
-          },
-          backgroundColor: AppTheme.lightTheme.colorScheme.surface,
-          selectedColor:
-              AppTheme.lightTheme.colorScheme.secondary.withValues(alpha: 0.2),
-          checkmarkColor: AppTheme.lightTheme.colorScheme.secondary,
-          labelStyle: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-            color: isSelected
-                ? AppTheme.lightTheme.colorScheme.secondary
-                : AppTheme.lightTheme.colorScheme.onSurface,
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildInvestmentRangeFilter() {
-    final minInvestment = (_filters['minInvestment'] as double?) ?? 1000.0;
-    final maxInvestment = (_filters['maxInvestment'] as double?) ?? 50000.0;
-
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '${minInvestment.toInt()}€',
-              style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            Text(
-              '${maxInvestment.toInt()}€',
-              style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        RangeSlider(
-          values: RangeValues(minInvestment, maxInvestment),
-          min: 500,
-          max: 100000,
-          divisions: 100,
-          labels: RangeLabels(
-            '${minInvestment.toInt()}€',
-            '${maxInvestment.toInt()}€',
-          ),
-          onChanged: (values) {
-            setState(() {
-              _filters['minInvestment'] = values.start;
-              _filters['maxInvestment'] = values.end;
-            });
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDurationFilter() {
-    final selectedDurations = (_filters['durations'] as List<String>?) ?? [];
-    final durations = ['3-6 mois', '6-12 mois', '1-2 ans', '2-5 ans', '5+ ans'];
-
-    return Column(
-      children: durations.map((duration) {
-        final isSelected = selectedDurations.contains(duration);
-        return CheckboxListTile(
-          title: Text(duration),
-          value: isSelected,
-          onChanged: (selected) {
-            setState(() {
-              if (selected == true) {
-                selectedDurations.add(duration);
-              } else {
-                selectedDurations.remove(duration);
-              }
-              _filters['durations'] = selectedDurations;
-            });
-          },
-          controlAffinity: ListTileControlAffinity.leading,
-          contentPadding: EdgeInsets.zero,
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildROIFilter() {
-    final minROI = (_filters['minROI'] as double?) ?? 5.0;
-    final maxROI = (_filters['maxROI'] as double?) ?? 25.0;
-
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '${minROI.toInt()}%',
-              style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            Text(
-              '${maxROI.toInt()}%',
-              style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        RangeSlider(
-          values: RangeValues(minROI, maxROI),
-          min: 0,
-          max: 50,
-          divisions: 50,
-          labels: RangeLabels(
-            '${minROI.toInt()}%',
-            '${maxROI.toInt()}%',
-          ),
-          onChanged: (values) {
-            setState(() {
-              _filters['minROI'] = values.start;
-              _filters['maxROI'] = values.end;
-            });
-          },
-        ),
-      ],
+      ),
     );
   }
 }

@@ -1,38 +1,81 @@
-import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
-
-import '../../../core/app_export.dart';
+import 'package:agridash/core/app_export.dart';
 
 class CultivationUpdatesCardWidget extends StatelessWidget {
-  final List<Map<String, dynamic>> cultivationUpdates;
-  final VoidCallback onViewAll;
+  const CultivationUpdatesCardWidget({super.key});
 
-  const CultivationUpdatesCardWidget({
-    super.key,
-    required this.cultivationUpdates,
-    required this.onViewAll,
-  });
+  List<Map<String, dynamic>> _getDemoUpdates() {
+    return [
+      {
+        'crop': 'Maïs Bio',
+        'update': 'Stade de croissance: Floraison',
+        'progress': 0.7,
+        'date': '2024-01-15',
+        'status': 'optimal',
+      },
+      {
+        'crop': 'Tomates Cerises',
+        'update': 'Récolte prévue dans 15 jours',
+        'progress': 0.9,
+        'date': '2024-01-14',
+        'status': 'excellent',
+      },
+      {
+        'crop': 'Riz',
+        'update': 'Irrigation en cours',
+        'progress': 0.4,
+        'date': '2024-01-13',
+        'status': 'normal',
+      },
+    ];
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'optimal':
+      case 'excellent':
+        return AppConstants.successColor;
+      case 'normal':
+        return AppConstants.accentColor;
+      case 'warning':
+        return AppConstants.warningColor;
+      case 'critical':
+        return AppConstants.errorColor;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'optimal':
+        return 'Optimal';
+      case 'excellent':
+        return 'Excellent';
+      case 'normal':
+        return 'Normal';
+      case 'warning':
+        return 'Attention';
+      case 'critical':
+        return 'Critique';
+      default:
+        return status;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final updates = _getDemoUpdates();
+
     return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(4.w),
-      margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF66BB6A),
-            const Color(0xFF66BB6A).withValues(alpha: 0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF66BB6A).withValues(alpha: 0.3),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
@@ -40,172 +83,115 @@ class CultivationUpdatesCardWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              CustomIconWidget(
-                iconName: 'eco',
-                color: Colors.white,
-                size: 24,
-              ),
-              SizedBox(width: 2.w),
-              Expanded(
-                child: Text(
-                  'Mises à jour de Culture',
-                  style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              GestureDetector(
-                onTap: onViewAll,
-                child: Text(
-                  'Voir tout',
-                  style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 2.h),
-          ...cultivationUpdates.take(2).map((update) {
-            // ✅ Sécurisation des champs
-            final imageUrl = update["image"]?.toString() ?? '';
-            final semanticLabel = update["semanticLabel"]?.toString() ?? 'Culture';
-            final title = update["title"]?.toString() ?? 'Titre indisponible';
-            final description = update["description"]?.toString() ?? 'Aucune description disponible';
-            final stage = update["stage"]?.toString() ?? 'Inconnu';
-            final date = update["date"]?.toString() ?? '';
-
-            return Container(
-              margin: EdgeInsets.only(bottom: 1.h),
-              padding: EdgeInsets.all(3.w),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 12.w,
-                    height: 12.w,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      color: Colors.white.withValues(alpha: 0.2),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: imageUrl.isNotEmpty
-                          ? CustomImageWidget(
-                              imageUrl: imageUrl,
-                              width: 12.w,
-                              height: 12.w,
-                              fit: BoxFit.cover,
-                              semanticLabel: semanticLabel,
-                            )
-                          : const Icon(Icons.image_not_supported, color: Colors.white),
-                    ),
-                  ),
-                  SizedBox(width: 3.w),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        SizedBox(height: 0.5.h),
-                        Text(
-                          description,
-                          style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.8),
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        SizedBox(height: 0.5.h),
-                        Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 2.w, vertical: 0.5.h),
-                              decoration: BoxDecoration(
-                                color: _getStageColor(stage),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                stage,
-                                style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                                  color: Colors.white,
-                                  fontSize: 10.sp,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 2.w),
-                            Text(
-                              date,
-                              style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                fontSize: 10.sp,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-          if (cultivationUpdates.length > 2) ...[
-            SizedBox(height: 1.h),
-            Center(
-              child: GestureDetector(
-                onTap: onViewAll,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '+${cultivationUpdates.length - 2} autres mises à jour',
-                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
+          Text(
+            'Mises à jour des Cultures',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppConstants.textColor,
             ),
-          ],
+          ),
+          const SizedBox(height: 16),
+          ...updates.map((update) => _buildUpdateItem(update)),
         ],
       ),
     );
   }
 
-  Color _getStageColor(String stage) {
-    switch (stage.toLowerCase()) {
-      case 'semis':
-        return Colors.brown;
-      case 'croissance':
-        return Colors.green;
-      case 'floraison':
-        return Colors.yellow;
-      case 'récolte':
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
+  Widget _buildUpdateItem(Map<String, dynamic> update) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          // Progress Circle
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                width: 50,
+                height: 50,
+                child: CircularProgressIndicator(
+                  value: update['progress'],
+                  backgroundColor: Colors.grey.shade300,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    _getStatusColor(update['status']),
+                  ),
+                  strokeWidth: 4,
+                ),
+              ),
+              Text(
+                '${(update['progress'] * 100).toInt()}%',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: AppConstants.textColor,
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(width: 12),
+          
+          // Update Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  update['crop'],
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppConstants.textColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  update['update'],
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppConstants.textColor.withOpacity(0.6),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Mise à jour: ${update['date']}',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppConstants.textColor.withOpacity(0.4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Status Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: _getStatusColor(update['status']).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(
+                color: _getStatusColor(update['status']).withOpacity(0.3),
+              ),
+            ),
+            child: Text(
+              _getStatusText(update['status']),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: _getStatusColor(update['status']),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

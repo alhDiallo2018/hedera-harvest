@@ -1,154 +1,204 @@
-import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
+import 'package:agridash/core/app_export.dart';
+import 'package:agridash/presentation/project_creation/widgets/crop_type_bottom_sheet.dart';
 
-import '../../../core/app_export.dart';
-
-class ProjectBasicInfoForm extends StatelessWidget {
-  final TextEditingController nameController;
-  final String? selectedCropType;
-  final VoidCallback onCropTypeSelect;
-  final Function(String) onNameChanged;
+class ProjectBasicInfoForm extends StatefulWidget {
+  final String title;
+  final String description;
+  final CropType selectedCrop;
+  final Function(String) onTitleChanged;
+  final Function(String) onDescriptionChanged;
+  final Function(CropType) onCropChanged;
 
   const ProjectBasicInfoForm({
     super.key,
-    required this.nameController,
-    required this.selectedCropType,
-    required this.onCropTypeSelect,
-    required this.onNameChanged,
+    required this.title,
+    required this.description,
+    required this.selectedCrop,
+    required this.onTitleChanged,
+    required this.onDescriptionChanged,
+    required this.onCropChanged,
   });
 
   @override
+  State<ProjectBasicInfoForm> createState() => _ProjectBasicInfoFormState();
+}
+
+class _ProjectBasicInfoFormState extends State<ProjectBasicInfoForm> {
+  void _showCropTypeBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => CropTypeBottomSheet(
+        selectedCrop: widget.selectedCrop,
+        onCropSelected: (crop) {
+          widget.onCropChanged(crop);
+          NavigationService().goBack();
+        },
+      ),
+    );
+  }
+
+  String _getCropDisplayName(CropType crop) {
+    switch (crop) {
+      case CropType.maize:
+        return 'Maïs';
+      case CropType.rice:
+        return 'Riz';
+      case CropType.tomato:
+        return 'Tomate';
+      case CropType.coffee:
+        return 'Café';
+      case CropType.cocoa:
+        return 'Cacao';
+      case CropType.cotton:
+        return 'Coton';
+      case CropType.wheat:
+        return 'Blé';
+      case CropType.soybean:
+        return 'Soja';
+      default:
+        return 'Autre';
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
-      padding: EdgeInsets.all(4.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: Offset(0, 2),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Informations de base',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppConstants.textColor,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Informations de base',
-            style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: AppTheme.lightTheme.colorScheme.primary,
+        ),
+        
+        const SizedBox(height: 24),
+        
+        // Project Title
+        TextFormField(
+          initialValue: widget.title,
+          decoration: const InputDecoration(
+            labelText: 'Titre du projet',
+            hintText: 'Ex: Culture de Maïs Bio en Normandie',
+            border: OutlineInputBorder(),
+          ),
+          maxLength: 100,
+          onChanged: widget.onTitleChanged,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Veuillez entrer un titre pour votre projet';
+            }
+            if (value.length < 10) {
+              return 'Le titre doit contenir au moins 10 caractères';
+            }
+            return null;
+          },
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // Crop Type Selection
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Type de culture',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppConstants.textColor.withOpacity(0.8),
+              ),
             ),
-          ),
-          SizedBox(height: 3.h),
-
-          // Project Name Field
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Nom du projet *',
-                style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: AppTheme.lightTheme.colorScheme.onSurface,
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: _showCropTypeBottomSheet,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.eco,
+                      color: AppConstants.primaryColor,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      _getCropDisplayName(widget.selectedCrop),
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: AppConstants.textColor,
+                      ),
+                    ),
+                    const Spacer(),
+                    const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                  ],
                 ),
               ),
-              SizedBox(height: 1.h),
-              TextFormField(
-                controller: nameController,
-                onChanged: onNameChanged,
-                maxLength: 50,
-                decoration: InputDecoration(
-                  hintText: 'Ex: Culture de maïs bio 2024',
-                  prefixIcon: Padding(
-                    padding: EdgeInsets.all(3.w),
-                    child: CustomIconWidget(
-                      iconName: 'agriculture',
-                      color: AppTheme.lightTheme.colorScheme.primary,
-                      size: 20,
-                    ),
-                  ),
-                  counterText: '${nameController.text.length}/50',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: AppTheme.lightTheme.colorScheme.outline,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: AppTheme.lightTheme.colorScheme.primary,
-                      width: 2,
-                    ),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // Project Description
+        TextFormField(
+          initialValue: widget.description,
+          decoration: const InputDecoration(
+            labelText: 'Description du projet',
+            hintText: 'Décrivez votre projet en détail...',
+            border: OutlineInputBorder(),
+            alignLabelWithHint: true,
+          ),
+          maxLines: 5,
+          maxLength: 1000,
+          onChanged: widget.onDescriptionChanged,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Veuillez entrer une description pour votre projet';
+            }
+            if (value.length < 50) {
+              return 'La description doit contenir au moins 50 caractères';
+            }
+            return null;
+          },
+        ),
+        
+        const SizedBox(height: 8),
+        
+        // Help Text
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppConstants.primaryColor.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.lightbulb_outline,
+                size: 16,
+                color: AppConstants.primaryColor,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Une description détaillée augmente les chances de financement de votre projet',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppConstants.textColor.withOpacity(0.6),
                   ),
                 ),
               ),
             ],
           ),
-
-          SizedBox(height: 3.h),
-
-          // Crop Type Selector
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Type de culture *',
-                style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  color: AppTheme.lightTheme.colorScheme.onSurface,
-                ),
-              ),
-              SizedBox(height: 1.h),
-              GestureDetector(
-                onTap: onCropTypeSelect,
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 3.h),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: AppTheme.lightTheme.colorScheme.outline,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      CustomIconWidget(
-                        iconName: 'eco',
-                        color: AppTheme.lightTheme.colorScheme.primary,
-                        size: 20,
-                      ),
-                      SizedBox(width: 3.w),
-                      Expanded(
-                        child: Text(
-                          selectedCropType ?? 'Sélectionner le type de culture',
-                          style: AppTheme.lightTheme.textTheme.bodyMedium
-                              ?.copyWith(
-                            color: selectedCropType != null
-                                ? AppTheme.lightTheme.colorScheme.onSurface
-                                : AppTheme.lightTheme.colorScheme.onSurface
-                                    .withValues(alpha: 0.6),
-                          ),
-                        ),
-                      ),
-                      CustomIconWidget(
-                        iconName: 'keyboard_arrow_down',
-                        color: AppTheme.lightTheme.colorScheme.onSurface
-                            .withValues(alpha: 0.6),
-                        size: 24,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

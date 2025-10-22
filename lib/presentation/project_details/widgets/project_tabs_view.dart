@@ -1,735 +1,605 @@
-import 'package:flutter/material.dart';
-
-import '../../../core/app_export.dart';
+import 'package:agridash/core/app_export.dart';
 
 class ProjectTabsView extends StatefulWidget {
-  final Map<String, dynamic> projectData;
+  final CropProject project;
+  final TabController tabController;
+  final VoidCallback onUpdate;
 
   const ProjectTabsView({
     super.key,
-    required this.projectData,
+    required this.project,
+    required this.tabController,
+    required this.onUpdate,
   });
 
   @override
   State<ProjectTabsView> createState() => _ProjectTabsViewState();
 }
 
-class _ProjectTabsViewState extends State<ProjectTabsView>
-    with TickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+class _ProjectTabsViewState extends State<ProjectTabsView> {
+  // ignore: unused_field
+  final ProjectService _projectService = ProjectService();
+  final AuthService _authService = AuthService();
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
+    return TabBarView(
+      controller: widget.tabController,
       children: [
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: theme.colorScheme.outline.withValues(alpha: 0.2),
-            ),
-          ),
-          child: TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            labelColor: theme.colorScheme.primary,
-            unselectedLabelColor:
-                theme.colorScheme.onSurface.withValues(alpha: 0.6),
-            indicator: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            indicatorPadding: const EdgeInsets.all(4),
-            labelStyle: theme.textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-            unselectedLabelStyle: theme.textTheme.labelLarge,
-            tabs: const [
-              Tab(text: 'Aperçu'),
-              Tab(text: 'Financier'),
-              Tab(text: 'Cultivation'),
-              Tab(text: 'Mises à jour'),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        Expanded(
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              _buildOverviewTab(),
-              _buildFinancialTab(),
-              _buildCultivationTab(),
-              _buildUpdatesTab(),
-            ],
-          ),
-        ),
+        // Details Tab
+        _buildDetailsTab(),
+        
+        // Updates Tab
+        _buildUpdatesTab(),
+        
+        // Investors Tab
+        _buildInvestorsTab(),
       ],
     );
   }
 
-  Widget _buildOverviewTab() {
-    final theme = Theme.of(context);
-
+  Widget _buildDetailsTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Project description
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.shadowColor.withValues(alpha: 0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Description du projet',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  widget.projectData['description'] as String,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    height: 1.5,
-                  ),
-                ),
-              ],
+          // Description
+          Text(
+            'Description',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppConstants.textColor,
             ),
           ),
-
-          const SizedBox(height: 16),
-
-          // Farmer profile
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.shadowColor.withValues(alpha: 0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Profil de l\'agriculteur',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(25),
-                      child: CustomImageWidget(
-                        imageUrl: widget.projectData['farmerAvatar'] as String,
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                        semanticLabel:
-                            widget.projectData['farmerAvatarLabel'] as String,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.projectData['farmerName'] as String,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${widget.projectData['farmerExperience']} ans d\'expérience',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.7),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+          const SizedBox(height: 8),
+          Text(
+            widget.project.description,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppConstants.textColor.withOpacity(0.8),
+              height: 1.5,
             ),
           ),
-
-          const SizedBox(height: 16),
-
-          // Expected returns and risk
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
+          
+          const SizedBox(height: 24),
+          
+          // Project Details
+          Text(
+            'Détails du Projet',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppConstants.textColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildDetailItem('Type de culture', widget.project.cropType.name),
+          _buildDetailItem('Localisation', widget.project.location),
+          _buildDetailItem('Date de début', _formatDate(widget.project.startDate)),
+          _buildDetailItem('Date de récolte estimée', _formatDate(widget.project.harvestDate)),
+          _buildDetailItem('Rendement estimé', '${widget.project.estimatedYield} ${widget.project.yieldUnit}'),
+          _buildDetailItem('Investissement total nécessaire', '${widget.project.totalInvestmentNeeded.toStringAsFixed(0)} FCFA'),
+          _buildDetailItem('Retour estimé', '${widget.project.estimatedReturns.toStringAsFixed(0)} FCFA'),
+          
+          const SizedBox(height: 24),
+          
+          // Farmer Information
+          Text(
+            'Informations de l\'Agriculteur',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppConstants.textColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
                   decoration: BoxDecoration(
-                    color: AppTheme.lightTheme.colorScheme.primary
-                        .withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppConstants.primaryColor,
+                    shape: BoxShape.circle,
                   ),
+                  child: const Icon(
+                    Icons.person,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CustomIconWidget(
-                        iconName: 'trending_up',
-                        color: AppTheme.lightTheme.colorScheme.primary,
-                        size: 24,
-                      ),
-                      const SizedBox(height: 8),
                       Text(
-                        'Rendement attendu',
-                        style: theme.textTheme.labelMedium,
-                        textAlign: TextAlign.center,
+                        widget.project.farmerName,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppConstants.textColor,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${widget.projectData['expectedReturn']}%',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: AppTheme.lightTheme.colorScheme.primary,
-                          fontWeight: FontWeight.w600,
+                        'Agriculteur expérimenté',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppConstants.textColor.withOpacity(0.6),
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.lightTheme.colorScheme.secondary
-                        .withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      CustomIconWidget(
-                        iconName: 'shield',
-                        color: AppTheme.lightTheme.colorScheme.secondary,
-                        size: 24,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Niveau de risque',
-                        style: theme.textTheme.labelMedium,
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        widget.projectData['riskLevel'] as String,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: AppTheme.lightTheme.colorScheme.secondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFinancialTab() {
-    final theme = Theme.of(context);
-    final financialData =
-        widget.projectData['financialBreakdown'] as Map<String, dynamic>;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Funding overview
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.shadowColor.withValues(alpha: 0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Aperçu financier',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildFinancialMetric(
-                        context,
-                        'Objectif',
-                        '${(widget.projectData['fundingGoal'] as double).toStringAsFixed(0)}€',
-                        AppTheme.lightTheme.colorScheme.primary,
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildFinancialMetric(
-                        context,
-                        'Collecté',
-                        '${(widget.projectData['currentFunding'] as double).toStringAsFixed(0)}€',
-                        AppTheme.lightTheme.colorScheme.secondary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildFinancialMetric(
-                        context,
-                        'Investisseurs',
-                        '${financialData['totalInvestors']}',
-                        AppTheme.lightTheme.colorScheme.tertiary,
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildFinancialMetric(
-                        context,
-                        'Durée',
-                        '${financialData['duration']} mois',
-                        Colors.green,
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
-
-          const SizedBox(height: 16),
-
-          // Cost allocation
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.shadowColor.withValues(alpha: 0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Répartition des coûts',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ...(financialData['costBreakdown']
-                        as List<Map<String, dynamic>>)
-                    .map((cost) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: Color(cost['color'] as int),
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            cost['category'] as String,
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                        ),
-                        Text(
-                          '${cost['amount']}€ (${cost['percentage']}%)',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCultivationTab() {
-    final theme = Theme.of(context);
-    final cultivationData =
-        widget.projectData['cultivationDetails'] as Map<String, dynamic>;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Planting schedule
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.shadowColor.withValues(alpha: 0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Calendrier de plantation',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ...(cultivationData['schedule'] as List<Map<String, dynamic>>)
-                    .map((phase) {
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surface,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: theme.colorScheme.outline.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppTheme.lightTheme.colorScheme.primary
-                                .withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: CustomIconWidget(
-                            iconName: phase['icon'] as String,
-                            color: AppTheme.lightTheme.colorScheme.primary,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                phase['phase'] as String,
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                phase['period'] as String,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.7),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Agricultural methods
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.shadowColor.withValues(alpha: 0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Méthodes agricoles',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: (cultivationData['methods'] as List<String>)
-                      .map((method) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppTheme.lightTheme.colorScheme.secondary
-                            .withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                        method,
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: AppTheme.lightTheme.colorScheme.secondary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
   Widget _buildUpdatesTab() {
-    final theme = Theme.of(context);
-    final updates = widget.projectData['updates'] as List<Map<String, dynamic>>;
-
-    return RefreshIndicator(
-      onRefresh: () async {
-        // Simulate refresh
-        await Future.delayed(const Duration(seconds: 1));
-      },
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: updates.length,
-        itemBuilder: (context, index) {
-          final update = updates[index];
-
-          return Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: theme.shadowColor.withValues(alpha: 0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: CustomImageWidget(
-                        imageUrl: update['authorAvatar'] as String,
-                        width: 40,
-                        height: 40,
-                        fit: BoxFit.cover,
-                        semanticLabel: update['authorAvatarLabel'] as String,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            update['author'] as String,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Text(
-                            update['date'] as String,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.7),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    GestureDetector(
-                      onLongPress: () => _showShareOptions(context, update),
-                      child: CustomIconWidget(
-                        iconName: 'more_vert',
-                        color:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                        size: 20,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  update['title'] as String,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  update['content'] as String,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    height: 1.5,
-                  ),
-                ),
-                if (update['image'] != null) ...[
-                  const SizedBox(height: 16),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: CustomImageWidget(
-                      imageUrl: update['image'] as String,
-                      width: double.infinity,
-                      height: 200,
-                      fit: BoxFit.cover,
-                      semanticLabel: update['imageLabel'] as String,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildFinancialMetric(
-      BuildContext context, String label, String value, Color color) {
-    final theme = Theme.of(context);
+    final updates = widget.project.updates;
+    final user = _authService.currentUser;
+    final isFarmer = user?.role == UserRole.farmer && user?.id == widget.project.farmerId;
 
     return Column(
       children: [
-        Text(
-          label,
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+        if (isFarmer)
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: ElevatedButton.icon(
+              onPressed: _showAddUpdateDialog,
+              icon: const Icon(Icons.add),
+              label: const Text('Ajouter une mise à jour'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppConstants.primaryColor,
+                foregroundColor: Colors.white,
+              ),
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: color,
-            fontWeight: FontWeight.w600,
-          ),
+        Expanded(
+          child: updates.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.update,
+                        size: 64,
+                        color: Colors.grey.shade300,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Aucune mise à jour pour le moment',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: AppConstants.textColor.withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: updates.length,
+                  itemBuilder: (context, index) {
+                    final update = updates[index];
+                    return _buildUpdateItem(update);
+                  },
+                ),
         ),
       ],
     );
   }
 
-  void _showShareOptions(BuildContext context, Map<String, dynamic> update) {
-    showModalBottomSheet(
+  Widget _buildInvestorsTab() {
+    // For demo purposes, we'll show mock investors
+    final mockInvestors = [
+      {'name': 'Marie Investisseur', 'amount': 15000, 'date': '2024-01-15'},
+      {'name': 'Pierre Capital', 'amount': 10000, 'date': '2024-01-12'},
+      {'name': 'Sophie Finance', 'amount': 8000, 'date': '2024-01-10'},
+    ];
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: mockInvestors.length,
+      itemBuilder: (context, index) {
+        final investor = mockInvestors[index];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppConstants.primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.person,
+                  color: AppConstants.primaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      investor['name'] as String,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppConstants.textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Investi le ${investor['date']}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppConstants.textColor.withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '${investor['amount']} FCFA',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppConstants.primaryColor,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 150,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppConstants.textColor.withOpacity(0.7),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppConstants.textColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUpdateItem(ProjectUpdate update) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _getUpdateTypeColor(update.type).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  _getUpdateTypeText(update.type),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: _getUpdateTypeColor(update.type),
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                _formatDate(update.date),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppConstants.textColor.withOpacity(0.5),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            update.title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppConstants.textColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            update.description,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppConstants.textColor.withOpacity(0.8),
+              height: 1.5,
+            ),
+          ),
+          if (update.images.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 100,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: update.images.length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    width: 100,
+                    height: 100,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      image: DecorationImage(
+                        image: NetworkImage(update.images[index]),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showAddUpdateDialog() {
+    showDialog(
       context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
+      builder: (context) => _AddUpdateDialog(
+        onUpdateAdded: widget.onUpdate,
+        projectId: widget.project.id,
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  Color _getUpdateTypeColor(UpdateType type) {
+    switch (type) {
+      case UpdateType.planting:
+        return AppConstants.primaryColor;
+      case UpdateType.growth:
+        return AppConstants.successColor;
+      case UpdateType.maintenance:
+        return AppConstants.warningColor;
+      case UpdateType.harvest:
+        return AppConstants.accentColor;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getUpdateTypeText(UpdateType type) {
+    switch (type) {
+      case UpdateType.planting:
+        return 'Plantation';
+      case UpdateType.growth:
+        return 'Croissance';
+      case UpdateType.maintenance:
+        return 'Maintenance';
+      case UpdateType.harvest:
+        return 'Récolte';
+      default:
+        return 'Général';
+    }
+  }
+}
+
+class _AddUpdateDialog extends StatefulWidget {
+  final VoidCallback onUpdateAdded;
+  final String projectId;
+
+  const _AddUpdateDialog({
+    required this.onUpdateAdded,
+    required this.projectId,
+  });
+
+  @override
+  State<_AddUpdateDialog> createState() => __AddUpdateDialogState();
+}
+
+class __AddUpdateDialogState extends State<_AddUpdateDialog> {
+  final ProjectService _projectService = ProjectService();
+  final _formKey = GlobalKey<FormState>();
+  
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  UpdateType _selectedType = UpdateType.general;
+  final List<String> _images = [];
+  
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitUpdate() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      await _projectService.addProjectUpdate(
+        projectId: widget.projectId,
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        type: _selectedType,
+        images: _images,
+      );
+
+      setState(() {
+        _isSubmitting = false;
+      });
+
+      widget.onUpdateAdded();
+      NavigationService().goBack();
+      NavigationService().showSuccessDialog('Mise à jour ajoutée avec succès !');
+    } catch (e) {
+      setState(() {
+        _isSubmitting = false;
+      });
+      NavigationService().showErrorDialog('Erreur: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Ajouter une mise à jour'),
+      content: Form(
+        key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: CustomIconWidget(
-                iconName: 'share',
-                color: Theme.of(context).colorScheme.primary,
-                size: 24,
-              ),
-              title: const Text('Partager cette mise à jour'),
-              onTap: () {
-                Navigator.pop(context);
-                // Implement share functionality
+            DropdownButtonFormField<UpdateType>(
+              value: _selectedType,
+              items: UpdateType.values.map((type) {
+                return DropdownMenuItem(
+                  value: type,
+                  child: Text(_getUpdateTypeText(type)),
+                );
+              }).toList(),
+              onChanged: (type) {
+                if (type != null) {
+                  setState(() {
+                    _selectedType = type;
+                  });
+                }
+              },
+              decoration: const InputDecoration(labelText: 'Type de mise à jour'),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _titleController,
+              decoration: const InputDecoration(labelText: 'Titre'),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Veuillez entrer un titre';
+                }
+                return null;
               },
             ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _descriptionController,
+              decoration: const InputDecoration(labelText: 'Description'),
+              maxLines: 3,
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Veuillez entrer une description';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            // Photo upload section would go here
           ],
         ),
       ),
+      actions: [
+        TextButton(
+          onPressed: () => NavigationService().goBack(),
+          child: const Text('Annuler'),
+        ),
+        ElevatedButton(
+          onPressed: _isSubmitting ? null : _submitUpdate,
+          child: _isSubmitting
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Ajouter'),
+        ),
+      ],
     );
+  }
+
+  String _getUpdateTypeText(UpdateType type) {
+    switch (type) {
+      case UpdateType.planting:
+        return 'Plantation';
+      case UpdateType.growth:
+        return 'Croissance';
+      case UpdateType.maintenance:
+        return 'Maintenance';
+      case UpdateType.harvest:
+        return 'Récolte';
+      default:
+        return 'Général';
+    }
   }
 }

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:agridash/theme/app_theme.dart';
 import 'package:flutter_svg/svg.dart';
 
 import '../core/app_export.dart';
@@ -59,7 +59,7 @@ class CustomErrorWidget extends StatelessWidget {
                   if (canBeBack) {
                     Navigator.of(context).pop();
                   } else {
-                    Navigator.pushNamed(context, AppRoutes.splash);
+                    Navigator.pushNamed(context, AppRoutes.splashScreen);
                   }
                 },
                 icon:

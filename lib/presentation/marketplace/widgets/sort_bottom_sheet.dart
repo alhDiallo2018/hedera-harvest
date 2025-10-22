@@ -1,126 +1,61 @@
-import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
-
-import '../../../core/app_export.dart';
+import 'package:agridash/core/app_export.dart';
 
 class SortBottomSheet extends StatelessWidget {
-  final String currentSort;
-  final Function(String) onSortChanged;
+  final List<String> sortOptions;
+  final String selectedSort;
+  final Function(String) onSortSelected;
 
   const SortBottomSheet({
     super.key,
-    required this.currentSort,
-    required this.onSortChanged,
+    required this.sortOptions,
+    required this.selectedSort,
+    required this.onSortSelected,
   });
 
   @override
   Widget build(BuildContext context) {
-    final sortOptions = [
-      {'key': 'relevance', 'label': 'Pertinence', 'icon': 'star'},
-      {'key': 'roi', 'label': 'ROI (Croissant)', 'icon': 'trending_up'},
-      {
-        'key': 'roi_desc',
-        'label': 'ROI (Décroissant)',
-        'icon': 'trending_down'
-      },
-      {'key': 'amount', 'label': 'Montant (Croissant)', 'icon': 'attach_money'},
-      {
-        'key': 'amount_desc',
-        'label': 'Montant (Décroissant)',
-        'icon': 'money_off'
-      },
-      {'key': 'date', 'label': 'Date (Plus récent)', 'icon': 'schedule'},
-      {'key': 'date_desc', 'label': 'Date (Plus ancien)', 'icon': 'history'},
-    ];
-
     return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.lightTheme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Handle bar
-          Container(
-            width: 12.w,
-            height: 0.5.h,
-            margin: EdgeInsets.symmetric(vertical: 2.h),
-            decoration: BoxDecoration(
-              color: AppTheme.lightTheme.dividerColor,
-              borderRadius: BorderRadius.circular(2),
+          Text(
+            'Trier par',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppConstants.textColor,
             ),
           ),
-
-          // Title
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4.w),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Trier par',
-                  style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+          const SizedBox(height: 16),
+          ...sortOptions.map((option) {
+            final isSelected = selectedSort == option;
+            
+            return ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(
+                isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                color: isSelected ? AppConstants.primaryColor : Colors.grey.shade400,
+              ),
+              title: Text(
+                option,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppConstants.textColor,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: CustomIconWidget(
-                    iconName: 'close',
-                    color: AppTheme.lightTheme.colorScheme.onSurface,
-                    size: 24,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Sort options
-          Flexible(
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: sortOptions.length,
-              itemBuilder: (context, index) {
-                final option = sortOptions[index];
-                final isSelected = currentSort == option['key'];
-
-                return ListTile(
-                  leading: CustomIconWidget(
-                    iconName: option['icon'] as String,
-                    color: isSelected
-                        ? AppTheme.lightTheme.colorScheme.primary
-                        : AppTheme.lightTheme.colorScheme.onSurface
-                            .withValues(alpha: 0.6),
-                    size: 24,
-                  ),
-                  title: Text(
-                    option['label'] as String,
-                    style: AppTheme.lightTheme.textTheme.bodyLarge?.copyWith(
-                      color: isSelected
-                          ? AppTheme.lightTheme.colorScheme.primary
-                          : AppTheme.lightTheme.colorScheme.onSurface,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.w400,
-                    ),
-                  ),
-                  trailing: isSelected
-                      ? CustomIconWidget(
-                          iconName: 'check',
-                          color: AppTheme.lightTheme.colorScheme.primary,
-                          size: 20,
-                        )
-                      : null,
-                  onTap: () {
-                    onSortChanged(option['key'] as String);
-                    Navigator.pop(context);
-                  },
-                );
-              },
-            ),
-          ),
-
-          SizedBox(height: 2.h),
+              ),
+              onTap: () => onSortSelected(option),
+            );
+          }).toList(),
         ],
       ),
     );

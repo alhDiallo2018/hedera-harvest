@@ -1,31 +1,96 @@
-import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
-
-import '../../../core/app_export.dart';
+import 'package:agridash/core/app_export.dart';
 
 class ActivityFeedWidget extends StatelessWidget {
-  final List<Map<String, dynamic>> activities;
-  final VoidCallback onViewAll;
+  final UserRole userRole;
 
   const ActivityFeedWidget({
     super.key,
-    required this.activities,
-    required this.onViewAll,
+    required this.userRole,
   });
+
+  List<Map<String, dynamic>> _getDemoActivities() {
+    final baseActivities = [
+      {
+        'type': 'project_update',
+        'title': 'Mise à jour de projet',
+        'description': 'Nouvelles photos de la croissance des cultures ajoutées',
+        'time': 'Il y a 2 heures',
+        'icon': Icons.photo_camera,
+        'color': AppConstants.primaryColor,
+      },
+      {
+        'type': 'investment',
+        'title': 'Nouvel investissement',
+        'description': 'Un investisseur a rejoint votre projet',
+        'time': 'Il y a 5 heures',
+        'icon': Icons.attach_money,
+        'color': AppConstants.successColor,
+      },
+      {
+        'type': 'system',
+        'title': 'Maintenance planifiée',
+        'description': 'Maintenance système prévue ce weekend',
+        'time': 'Il y a 1 jour',
+        'icon': Icons.build,
+        'color': AppConstants.warningColor,
+      },
+    ];
+
+    switch (userRole) {
+      case UserRole.farmer:
+        return [
+          ...baseActivities,
+          {
+            'type': 'weather',
+            'title': 'Alerte météo',
+            'description': 'Pluies attendues dans votre région',
+            'time': 'Il y a 2 jours',
+            'icon': Icons.cloud,
+            'color': AppConstants.accentColor,
+          },
+        ];
+      case UserRole.investor:
+        return [
+          ...baseActivities,
+          {
+            'type': 'dividend',
+            'title': 'Dividende disponible',
+            'description': 'Nouveaux dividendes à retirer',
+            'time': 'Il y a 3 jours',
+            'icon': Icons.account_balance_wallet,
+            'color': AppConstants.successColor,
+          },
+        ];
+      case UserRole.admin:
+        return [
+          ...baseActivities,
+          {
+            'type': 'user',
+            'title': 'Nouvel utilisateur',
+            'description': 'Un nouvel agriculteur s\'est inscrit',
+            'time': 'Il y a 4 jours',
+            'icon': Icons.person_add,
+            'color': AppConstants.accentColor,
+          },
+        ];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final activities = _getDemoActivities();
+
     return Container(
-      padding: EdgeInsets.all(4.w),
-      margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.lightTheme.colorScheme.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.lightTheme.shadowColor.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -33,179 +98,96 @@ class ActivityFeedWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              CustomIconWidget(
-                iconName: 'timeline',
-                color: AppTheme.lightTheme.colorScheme.primary,
-                size: 24,
-              ),
-              SizedBox(width: 2.w),
-              Expanded(
-                child: Text(
-                  'Activité Récente',
-                  style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.lightTheme.colorScheme.onSurface,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+              Text(
+                'Flux d\'Activité',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppConstants.textColor,
                 ),
               ),
-              GestureDetector(
-                onTap: onViewAll,
-                child: Text(
-                  'Voir tout',
-                  style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                    color: AppTheme.lightTheme.colorScheme.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
+              Badge(
+                backgroundColor: AppConstants.primaryColor,
+                textColor: Colors.white,
+                label: Text(activities.length.toString()),
+                child: Icon(
+                  Icons.notifications_none,
+                  color: AppConstants.textColor.withOpacity(0.6),
                 ),
               ),
             ],
           ),
-          SizedBox(height: 2.h),
-          ...activities
-              .take(4)
-              .map((activity) => Container(
-                    margin: EdgeInsets.only(bottom: 1.5.h),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 8.w,
-                          height: 8.w,
-                          decoration: BoxDecoration(
-                            color:
-                                _getActivityColor(activity["type"] as String),
-                            shape: BoxShape.circle,
-                          ),
-                          child: CustomIconWidget(
-                            iconName:
-                                _getActivityIcon(activity["type"] as String),
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ),
-                        SizedBox(width: 3.w),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                activity["title"] as String,
-                                style: AppTheme.lightTheme.textTheme.bodyMedium
-                                    ?.copyWith(
-                                  fontWeight: FontWeight.w500,
-                                  color:
-                                      AppTheme.lightTheme.colorScheme.onSurface,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              SizedBox(height: 0.5.h),
-                              Text(
-                                activity["description"] as String,
-                                style: AppTheme.lightTheme.textTheme.bodySmall
-                                    ?.copyWith(
-                                  color: AppTheme
-                                      .lightTheme.colorScheme.onSurface
-                                      .withValues(alpha: 0.7),
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              SizedBox(height: 0.5.h),
-                              Row(
-                                children: [
-                                  CustomIconWidget(
-                                    iconName: 'access_time',
-                                    color: AppTheme
-                                        .lightTheme.colorScheme.onSurface
-                                        .withValues(alpha: 0.5),
-                                    size: 12,
-                                  ),
-                                  SizedBox(width: 1.w),
-                                  Text(
-                                    activity["time"] as String,
-                                    style: AppTheme
-                                        .lightTheme.textTheme.bodySmall
-                                        ?.copyWith(
-                                      color: AppTheme
-                                          .lightTheme.colorScheme.onSurface
-                                          .withValues(alpha: 0.5),
-                                      fontSize: 10.sp,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ))
-              .toList(),
-          if (activities.length > 4) ...[
-            SizedBox(height: 1.h),
-            Center(
-              child: GestureDetector(
-                onTap: onViewAll,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-                  decoration: BoxDecoration(
-                    color: AppTheme.lightTheme.colorScheme.primary
-                        .withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: AppTheme.lightTheme.colorScheme.primary
-                          .withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Text(
-                    '+${activities.length - 4} autres activités',
-                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                      color: AppTheme.lightTheme.colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
+          const SizedBox(height: 16),
+          ...activities.map((activity) => _buildActivityItem(activity)),
         ],
       ),
     );
   }
 
-  Color _getActivityColor(String type) {
-    switch (type.toLowerCase()) {
-      case 'project_update':
-        return AppTheme.lightTheme.colorScheme.primary;
-      case 'investment':
-        return AppTheme.lightTheme.colorScheme.secondary;
-      case 'cultivation':
-        return const Color(0xFF66BB6A);
-      case 'transaction':
-        return AppTheme.lightTheme.colorScheme.tertiary;
-      case 'milestone':
-        return Colors.purple;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  String _getActivityIcon(String type) {
-    switch (type.toLowerCase()) {
-      case 'project_update':
-        return 'update';
-      case 'investment':
-        return 'trending_up';
-      case 'cultivation':
-        return 'eco';
-      case 'transaction':
-        return 'account_balance_wallet';
-      case 'milestone':
-        return 'flag';
-      default:
-        return 'notifications';
-    }
+  Widget _buildActivityItem(Map<String, dynamic> activity) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          // Activity Icon
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: activity['color'].withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              activity['icon'],
+              color: activity['color'],
+              size: 20,
+            ),
+          ),
+          
+          const SizedBox(width: 12),
+          
+          // Activity Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  activity['title'],
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppConstants.textColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  activity['description'],
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppConstants.textColor.withOpacity(0.6),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  activity['time'],
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppConstants.textColor.withOpacity(0.4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

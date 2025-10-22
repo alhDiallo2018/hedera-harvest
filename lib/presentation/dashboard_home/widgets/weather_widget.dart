@@ -1,46 +1,61 @@
-import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
-
-import '../../../core/app_export.dart';
+import 'package:agridash/core/app_export.dart';
 
 class WeatherWidget extends StatelessWidget {
   final String location;
-  final double temperature;
-  final String condition;
-  final int humidity;
-  final double windSpeed;
-  final String weatherIcon;
 
   const WeatherWidget({
     super.key,
     required this.location,
-    required this.temperature,
-    required this.condition,
-    required this.humidity,
-    required this.windSpeed,
-    required this.weatherIcon,
   });
+
+  Map<String, dynamic> _getWeatherData() {
+    // Demo weather data
+    return {
+      'temperature': 22,
+      'condition': 'Ensoleillé',
+      'icon': Icons.wb_sunny,
+      'humidity': 65,
+      'precipitation': 10,
+      'wind': 12,
+    };
+  }
+
+  Color _getWeatherColor(String condition) {
+    switch (condition.toLowerCase()) {
+      case 'ensoleillé':
+        return const Color(0xFFFFA726);
+      case 'nuageux':
+        return const Color(0xFF78909C);
+      case 'pluie':
+        return const Color(0xFF42A5F5);
+      case 'orage':
+        return const Color(0xFF5C6BC0);
+      default:
+        return AppConstants.primaryColor;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final weather = _getWeatherData();
+
     return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(4.w),
-      margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            const Color(0xFF42A5F5),
-            const Color(0xFF1976D2),
-          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+          colors: [
+            _getWeatherColor(weather['condition']).withOpacity(0.8),
+            _getWeatherColor(weather['condition']).withOpacity(0.4),
+          ],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF42A5F5).withValues(alpha: 0.3),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
@@ -49,109 +64,100 @@ class WeatherWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              CustomIconWidget(
-                iconName: 'wb_sunny',
-                color: Colors.white,
-                size: 24,
-              ),
-              SizedBox(width: 2.w),
-              Expanded(
-                child: Text(
-                  'Météo - $location',
-                  style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    location,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
                   ),
-                  overflow: TextOverflow.ellipsis,
-                ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Météo Agricole',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+              Icon(
+                weather['icon'],
+                size: 40,
+                color: Colors.white,
               ),
             ],
           ),
-          SizedBox(height: 2.h),
+          
+          const SizedBox(height: 20),
+          
+          // Temperature
+          Center(
+            child: Text(
+              '${weather['temperature']}°C',
+              style: const TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.w300,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 8),
+          
+          Center(
+            child: Text(
+              weather['condition'],
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white.withOpacity(0.9),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Weather Details
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              // Weather Icon and Temperature
-              Expanded(
-                flex: 2,
-                child: Row(
-                  children: [
-                    CustomImageWidget(
-                      imageUrl: weatherIcon,
-                      width: 15.w,
-                      height: 15.w,
-                      fit: BoxFit.contain,
-                      semanticLabel: "Icône météo montrant $condition",
-                    ),
-                    SizedBox(width: 3.w),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${temperature.toInt()}°C',
-                          style: AppTheme.lightTheme.textTheme.headlineMedium
-                              ?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          condition,
-                          style: AppTheme.lightTheme.textTheme.bodyMedium
-                              ?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // Weather Details
-              Expanded(
-                flex: 1,
-                child: Column(
-                  children: [
-                    _buildWeatherDetail(
-                      icon: 'water_drop',
-                      label: 'Humidité',
-                      value: '$humidity%',
-                    ),
-                    SizedBox(height: 1.h),
-                    _buildWeatherDetail(
-                      icon: 'air',
-                      label: 'Vent',
-                      value: '${windSpeed.toInt()} km/h',
-                    ),
-                  ],
-                ),
-              ),
+              _buildWeatherDetail('Humidité', '${weather['humidity']}%', Icons.opacity),
+              _buildWeatherDetail('Précipitation', '${weather['precipitation']}%', Icons.water_drop),
+              _buildWeatherDetail('Vent', '${weather['wind']} km/h', Icons.air),
             ],
           ),
-          SizedBox(height: 1.h),
+          
+          const SizedBox(height: 16),
+          
+          // Weather Alert
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
               children: [
-                CustomIconWidget(
-                  iconName: 'info_outline',
-                  color: Colors.white,
+                Icon(
+                  Icons.info_outline,
                   size: 16,
+                  color: Colors.white,
                 ),
-                SizedBox(width: 2.w),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    _getWeatherAdvice(),
-                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w400,
+                    'Conditions optimales pour les cultures de saison',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withOpacity(0.9),
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -162,48 +168,31 @@ class WeatherWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildWeatherDetail({
-    required String icon,
-    required String label,
-    required String value,
-  }) {
+  Widget _buildWeatherDetail(String label, String value, IconData icon) {
     return Column(
       children: [
-        CustomIconWidget(
-          iconName: icon,
-          color: Colors.white.withValues(alpha: 0.8),
+        Icon(
+          icon,
           size: 20,
+          color: Colors.white.withOpacity(0.8),
         ),
-        SizedBox(height: 0.5.h),
+        const SizedBox(height: 4),
         Text(
           value,
-          style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-            color: Colors.white,
+          style: const TextStyle(
+            fontSize: 14,
             fontWeight: FontWeight.w600,
+            color: Colors.white,
           ),
         ),
         Text(
           label,
-          style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-            color: Colors.white.withValues(alpha: 0.7),
-            fontSize: 10.sp,
+          style: TextStyle(
+            fontSize: 10,
+            color: Colors.white.withOpacity(0.7),
           ),
         ),
       ],
     );
-  }
-
-  String _getWeatherAdvice() {
-    if (temperature > 30) {
-      return 'Temps chaud - Arrosage recommandé';
-    } else if (temperature < 10) {
-      return 'Temps froid - Protection des cultures';
-    } else if (humidity > 80) {
-      return 'Humidité élevée - Surveillance des maladies';
-    } else if (windSpeed > 20) {
-      return 'Vent fort - Vérifier les supports';
-    } else {
-      return 'Conditions favorables pour l\'agriculture';
-    }
   }
 }

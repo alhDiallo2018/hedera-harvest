@@ -1,20 +1,43 @@
-// Créer un fichier route_arguments.dart
-import 'package:agridash/core/models/crop_investment.dart';
+// Arguments for project details screen
+class ProjectDetailsArgs {
+  final String projectId;
+  final bool fromMarketplace;
 
-class DashboardArguments {
-  final String userType;
-  
-  DashboardArguments({required this.userType});
+  ProjectDetailsArgs({
+    required this.projectId,
+    this.fromMarketplace = false,
+  });
 }
 
-class CropDetailArguments {
-  final CropInvestment investment;
-  
-  CropDetailArguments({required this.investment});
+// Arguments for crop detail screen
+class CropDetailArgs {
+  final String cropId;
+  final String? projectId;
+
+  CropDetailArgs({
+    required this.cropId,
+    this.projectId,
+  });
 }
 
-class ProjectDetailArguments {
-  final Map<String, dynamic> projectData;
-  
-  ProjectDetailArguments({required this.projectData});
+// Arguments for investment screen
+class InvestmentArgs {
+  final String projectId;
+  final double? presetAmount;
+
+  InvestmentArgs({
+    required this.projectId,
+    this.presetAmount,
+  });
+}
+
+// Arguments for profile editing
+class ProfileEditArgs {
+  final bool isEditing;
+  final Map<String, dynamic>? initialData;
+
+  ProfileEditArgs({
+    this.isEditing = false,
+    this.initialData,
+  });
 }

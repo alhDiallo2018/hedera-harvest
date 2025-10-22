@@ -1,77 +1,31 @@
-import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
-
-import '../../../core/app_export.dart';
+import 'package:agridash/core/app_export.dart';
 
 class KeyMetricsWidget extends StatelessWidget {
-  final Map<String, dynamic> metricsData;
+  final Map<String, dynamic> portfolioSummary;
 
   const KeyMetricsWidget({
     super.key,
-    required this.metricsData,
+    required this.portfolioSummary,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    final metrics = [
-      {
-        'title': 'Investissement Initial',
-        'value':
-            '€${((metricsData['initialInvestment'] as double?) ?? 0.0).toStringAsFixed(2)}',
-        'icon': 'account_balance_wallet',
-        'color': colorScheme.primary,
-      },
-      {
-        'title': 'Valeur Actuelle',
-        'value':
-            '€${((metricsData['currentValue'] as double?) ?? 0.0).toStringAsFixed(2)}',
-        'icon': 'trending_up',
-        'color': AppTheme.lightTheme.colorScheme.tertiary,
-      },
-      {
-        'title': 'Rendement Total',
-        'value':
-            '€${((metricsData['totalReturn'] as double?) ?? 0.0).toStringAsFixed(2)}',
-        'icon': 'show_chart',
-        'color': _getReturnColor(metricsData['totalReturn'] as double? ?? 0.0),
-      },
-      {
-        'title': 'ROI',
-        'value':
-            '${((metricsData['roiPercentage'] as double?) ?? 0.0).toStringAsFixed(2)}%',
-        'icon': 'percent',
-        'color':
-            _getReturnColor(metricsData['roiPercentage'] as double? ?? 0.0),
-      },
-      {
-        'title': 'Dividendes Reçus',
-        'value':
-            '€${((metricsData['dividendPayments'] as double?) ?? 0.0).toStringAsFixed(2)}',
-        'icon': 'payments',
-        'color': AppTheme.lightTheme.colorScheme.secondary,
-      },
-      {
-        'title': 'Durée',
-        'value': '${(metricsData['duration'] as int?) ?? 0} mois',
-        'icon': 'schedule',
-        'color': colorScheme.onSurface.withValues(alpha: 0.7),
-      },
-    ];
+    final activeInvestments = portfolioSummary['activeInvestments'] ?? 0;
+    final completedInvestments = portfolioSummary['completedInvestments'] ?? 0;
+    final totalInvested = portfolioSummary['totalInvested'] ?? 0.0;
+    final currentValue = portfolioSummary['currentValue'] ?? 0.0;
 
     return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(4.w),
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: theme.shadowColor.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -79,112 +33,85 @@ class KeyMetricsWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Métriques Clés',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface,
+            'Indicateurs Clés',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppConstants.textColor,
             ),
           ),
-          SizedBox(height: 3.h),
-          GridView.builder(
+          
+          const SizedBox(height: 16),
+          
+          GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 3.w,
-              mainAxisSpacing: 2.h,
-              childAspectRatio: 2.5,
-            ),
-            itemCount: metrics.length,
-            itemBuilder: (context, index) {
-              final metric = metrics[index];
-              return _MetricCard(
-                title: metric['title'] as String,
-                value: metric['value'] as String,
-                icon: metric['icon'] as String,
-                color: metric['color'] as Color,
-                theme: theme,
-              );
-            },
+            crossAxisCount: 2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 1.5,
+            children: [
+              _buildMetricCard(
+                'Investissements Actifs',
+                activeInvestments.toString(),
+                Icons.trending_up,
+                AppConstants.primaryColor,
+              ),
+              _buildMetricCard(
+                'Projets Terminés',
+                completedInvestments.toString(),
+                Icons.check_circle,
+                AppConstants.successColor,
+              ),
+              _buildMetricCard(
+                'Total Investi',
+                '${totalInvested.toStringAsFixed(0)} FCFA',
+                Icons.account_balance_wallet,
+                AppConstants.accentColor,
+              ),
+              _buildMetricCard(
+                'Valeur Actuelle',
+                '${currentValue.toStringAsFixed(0)} FCFA',
+                Icons.attach_money,
+                AppConstants.warningColor,
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Color _getReturnColor(double value) {
-    if (value > 0) {
-      return AppTheme.lightTheme.colorScheme.tertiary;
-    } else if (value < 0) {
-      return AppTheme.lightTheme.colorScheme.error;
-    } else {
-      return AppTheme.lightTheme.colorScheme.onSurface.withValues(alpha: 0.7);
-    }
-  }
-}
-
-class _MetricCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final String icon;
-  final Color color;
-  final ThemeData theme;
-
-  const _MetricCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.color,
-    required this.theme,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = theme.colorScheme;
-
+  Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
     return Container(
-      padding: EdgeInsets.all(3.w),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: color.withValues(alpha: 0.2),
+          color: color.withOpacity(0.2),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withValues(alpha: 0.7),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              CustomIconWidget(
-                iconName: icon,
-                color: color,
-                size: 20,
-              ),
-            ],
-          ),
-          SizedBox(height: 1.h),
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
           Text(
             value,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
               color: color,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              color: AppConstants.textColor.withOpacity(0.6),
+            ),
           ),
         ],
       ),

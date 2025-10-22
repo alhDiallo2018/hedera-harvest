@@ -1,88 +1,58 @@
-import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
+import 'package:agridash/core/app_export.dart';
 
-import '../../../core/app_export.dart';
-
-class FilterChipsRow extends StatelessWidget {
-  final List<String> activeFilters;
-  final VoidCallback onClearFilters;
+class FilterChipsRow extends StatefulWidget {
+  final String selectedCategory;
+  final List<String> categories;
+  final Function(String) onCategoryChanged;
 
   const FilterChipsRow({
     super.key,
-    required this.activeFilters,
-    required this.onClearFilters,
+    required this.selectedCategory,
+    required this.categories,
+    required this.onCategoryChanged,
   });
 
   @override
-  Widget build(BuildContext context) {
-    if (activeFilters.isEmpty) {
-      return const SizedBox.shrink();
-    }
+  State<FilterChipsRow> createState() => _FilterChipsRowState();
+}
 
+class _FilterChipsRowState extends State<FilterChipsRow> {
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Filtres actifs:',
-                style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      color: Colors.white,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: widget.categories.map((category) {
+            final isSelected = widget.selectedCategory == category;
+            
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: FilterChip(
+                selected: isSelected,
+                label: Text(category),
+                onSelected: (selected) {
+                  widget.onCategoryChanged(selected ? category : 'Tous');
+                },
+                backgroundColor: Colors.white,
+                selectedColor: AppConstants.primaryColor.withOpacity(0.1),
+                checkmarkColor: AppConstants.primaryColor,
+                labelStyle: TextStyle(
+                  color: isSelected ? AppConstants.primaryColor : AppConstants.textColor,
                   fontWeight: FontWeight.w500,
                 ),
-              ),
-              TextButton(
-                onPressed: onClearFilters,
-                child: Text(
-                  'Effacer tout',
-                  style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                    color: AppTheme.lightTheme.colorScheme.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
+                side: BorderSide(
+                  color: isSelected ? AppConstants.primaryColor : Colors.grey.shade300,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
               ),
-            ],
-          ),
-          SizedBox(height: 0.5.h),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: activeFilters.map((filter) {
-                return Container(
-                  margin: EdgeInsets.only(right: 2.w),
-                  child: Chip(
-                    label: Text(
-                      filter,
-                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                        color: AppTheme.lightTheme.colorScheme.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    backgroundColor: AppTheme.lightTheme.colorScheme.primary
-                        .withValues(alpha: 0.1),
-                    deleteIcon: CustomIconWidget(
-                      iconName: 'close',
-                      color: AppTheme.lightTheme.colorScheme.primary,
-                      size: 16,
-                    ),
-                    onDeleted: () {
-                      // Handle individual filter removal
-                    },
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      side: BorderSide(
-                        color: AppTheme.lightTheme.colorScheme.primary
-                            .withValues(alpha: 0.3),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ],
+            );
+          }).toList(),
+        ),
       ),
     );
   }

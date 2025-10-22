@@ -1,154 +1,181 @@
-import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
-
-import '../../../core/app_export.dart';
+import 'package:agridash/core/app_export.dart';
 
 class InvestmentOpportunitiesCardWidget extends StatelessWidget {
-  final int availableProjects;
-  final double averageReturn;
-  final String topCategory;
-  final VoidCallback onTap;
+  final List<CropProject> projects;
+  final Function(CropProject) onProjectTap;
 
   const InvestmentOpportunitiesCardWidget({
     super.key,
-    required this.availableProjects,
-    required this.averageReturn,
-    required this.topCategory,
-    required this.onTap,
+    required this.projects,
+    required this.onProjectTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(4.w),
-        margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppTheme.lightTheme.colorScheme.secondary,
-              AppTheme.lightTheme.colorScheme.secondary.withValues(alpha: 0.8),
+    return Container(
+      margin: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Opportunités d\'Investissement',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppConstants.textColor,
+                ),
+              ),
+              TextButton(
+                onPressed: () => NavigationService().toMarketplace(),
+                child: Text(
+                  'Voir tout',
+                  style: TextStyle(
+                    color: AppConstants.primaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
             ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(16),
+          const SizedBox(height: 16),
+          ...projects.map((project) => _buildProjectCard(project)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProjectCard(CropProject project) {
+    return GestureDetector(
+      onTap: () => onProjectTap(project),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.lightTheme.colorScheme.secondary
-                  .withValues(alpha: 0.3),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 8,
-              offset: const Offset(0, 4),
+              offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Row(
-              children: [
-                CustomIconWidget(
-                  iconName: 'trending_up',
-                  color: Colors.white,
-                  size: 24,
-                ),
-                SizedBox(width: 2.w),
-                Expanded(
-                  child: Text(
-                    'Opportunités d\'Investissement',
-                    style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                CustomIconWidget(
-                  iconName: 'arrow_forward_ios',
-                  color: Colors.white.withValues(alpha: 0.7),
-                  size: 16,
-                ),
-              ],
-            ),
-            SizedBox(height: 2.h),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '$availableProjects',
-                        style: AppTheme.lightTheme.textTheme.headlineMedium
-                            ?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'Projets disponibles',
-                        style:
-                            AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: 1,
-                  height: 6.h,
-                  color: Colors.white.withValues(alpha: 0.3),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '${averageReturn.toStringAsFixed(1)}%',
-                        style: AppTheme.lightTheme.textTheme.headlineMedium
-                            ?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        'Rendement moyen',
-                        style:
-                            AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 1.h),
+            // Project Image/Icon
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 1.h),
+              width: 60,
+              height: 60,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
+                color: AppConstants.primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Row(
+              child: project.imageUrls.isNotEmpty
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        project.imageUrls.first,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  : Icon(
+                      Icons.eco,
+                      color: AppConstants.primaryColor,
+                      size: 30,
+                    ),
+            ),
+            
+            const SizedBox(width: 16),
+            
+            // Project Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CustomIconWidget(
-                    iconName: 'local_florist',
-                    color: Colors.white,
-                    size: 16,
-                  ),
-                  SizedBox(width: 2.w),
                   Text(
-                    'Catégorie populaire: $topCategory',
-                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
+                    project.title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppConstants.textColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    project.farmerName,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppConstants.textColor.withOpacity(0.6),
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  
+                  // Progress Bar
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '${project.progressPercentage.toStringAsFixed(0)}% financé',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: AppConstants.textColor,
+                            ),
+                          ),
+                          Text(
+                            '${project.currentInvestment.toStringAsFixed(0)} / ${project.totalInvestmentNeeded.toStringAsFixed(0)} FCFA',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppConstants.textColor.withOpacity(0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      LinearProgressIndicator(
+                        value: project.progressPercentage / 100,
+                        backgroundColor: Colors.grey.shade200,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          project.progressPercentage >= 100 
+                              ? AppConstants.successColor 
+                              : AppConstants.primaryColor,
+                        ),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ],
+                  ),
                 ],
+              ),
+            ),
+            
+            const SizedBox(width: 12),
+            
+            // ROI Badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppConstants.successColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: AppConstants.successColor.withOpacity(0.3),
+                ),
+              ),
+              child: Text(
+                '${project.estimatedROI.toStringAsFixed(0)}% ROI',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppConstants.successColor,
+                ),
               ),
             ),
           ],

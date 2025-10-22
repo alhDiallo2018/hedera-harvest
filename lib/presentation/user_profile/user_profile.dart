@@ -1,512 +1,534 @@
-import 'package:agridash/core/index.dart';
-import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
+import 'package:agridash/core/app_export.dart';
 
-class UserProfileScreen extends StatefulWidget {
-  const UserProfileScreen({super.key});
+class UserProfile extends StatefulWidget {
+  const UserProfile({super.key});
 
   @override
-  State<UserProfileScreen> createState() => _UserProfileScreenState();
+  State<UserProfile> createState() => _UserProfileState();
 }
 
-class _UserProfileScreenState extends State<UserProfileScreen> {
-  final UserProfile user = UserProfile(
-    name: 'Jean Koffi',
-    email: 'jean.koffi@email.com',
-    phone: '+225 07 08 09 10 11',
-    joinDate: '15 Jan 2023',
-    totalInvestments: 3,
-    totalPortfolioValue: 452000,
-    averageReturn: 12.5,
-  );
+class _UserProfileState extends State<UserProfile> {
+  final AuthService _authService = AuthService();
+  final PortfolioService _portfolioService = PortfolioService();
+  
+  UserModel? _user;
+  Map<String, dynamic> _portfolioData = {};
+  bool _isLoading = true;
 
-  bool notifications = true;
-  bool darkMode = false;
-  bool biometricAuth = true;
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      _user = _authService.currentUser;
+      if (_user != null) {
+        if (_user!.role == UserRole.farmer) {
+          _portfolioData = await _portfolioService.getFarmerPortfolio(_user!.id);
+        } else if (_user!.role == UserRole.investor) {
+          _portfolioData = await _portfolioService.getPortfolioSummary(_user!.id);
+        }
+      }
+
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      NavigationService().showErrorDialog('Erreur lors du chargement du profil: $e');
+    }
+  }
+
+  void _editProfile() {
+    NavigationService().showSuccessDialog('Édition du profil en cours de développement');
+  }
+
+  void _showSettings() {
+    NavigationService().showSuccessDialog('Paramètres en cours de développement');
+  }
+
+  void _showHelp() {
+    NavigationService().showSuccessDialog('Centre d\'aide en cours de développement');
+  }
+
+  Future<void> _logout() async {
+    final confirmed = await NavigationService().showConfirmationDialog(
+      title: 'Déconnexion',
+      message: 'Êtes-vous sûr de vouloir vous déconnecter ?',
+      confirmText: 'Déconnexion',
+      cancelText: 'Annuler',
+    );
+
+    if (confirmed == true) {
+      await _authService.logout();
+      NavigationService().toLogin();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Mon Profil',
-          style: GoogleFonts.roboto(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              // Naviguer vers les paramètres
-            },
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.sp),
-        child: Column(
-          children: [
-            // Section profil
-            _buildProfileSection(),
-            SizedBox(height: 3.h),
-            
-            // Statistiques
-            _buildStatsSection(),
-            SizedBox(height: 3.h),
-            
-            // Menu des options
-            _buildMenuSection(),
-            SizedBox(height: 3.h),
-            
-            // Section préférences
-            _buildPreferencesSection(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileSection() {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: EdgeInsets.all(16.sp),
-        child: Column(
-          children: [
-            // Avatar et informations
-            Row(
-              children: [
-                Container(
-                  width: 20.w,
-                  height: 20.w,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                      width: 2,
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.person,
-                    size: 12.w,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                SizedBox(width: 4.w),
-                Expanded(
+      backgroundColor: AppConstants.backgroundColor,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _user == null
+              ? Center(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        user.name,
-                        style: GoogleFonts.roboto(
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      const Icon(Icons.error_outline, size: 64, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Utilisateur non connecté',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
-                      SizedBox(height: 0.5.h),
-                      Text(
-                        user.email,
-                        style: GoogleFonts.roboto(
-                          fontSize: 14.sp,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      SizedBox(height: 0.5.h),
-                      Text(
-                        user.phone,
-                        style: GoogleFonts.roboto(
-                          fontSize: 14.sp,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      SizedBox(height: 1.h),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12.sp, vertical: 6.sp),
-                        decoration: BoxDecoration(
-                          color: AppTheme.successLight.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          'Investisseur Verifié',
-                          style: GoogleFonts.roboto(
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w500,
-                            color: AppTheme.successLight,
-                          ),
-                        ),
+                      const SizedBox(height: 8),
+                      ElevatedButton(
+                        onPressed: () => NavigationService().toLogin(),
+                        child: const Text('Se connecter'),
                       ),
                     ],
                   ),
+                )
+              : CustomScrollView(
+                  slivers: [
+                    // Header
+                    SliverAppBar(
+                      backgroundColor: Colors.white,
+                      elevation: 0,
+                      title: Text(
+                        'Mon Profil',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppConstants.textColor,
+                        ),
+                      ),
+                      actions: [
+                        IconButton(
+                          onPressed: _editProfile,
+                          icon: const Icon(Icons.edit_outlined),
+                          color: AppConstants.textColor,
+                        ),
+                      ],
+                    ),
+
+                    // Profile Header
+                    SliverToBoxAdapter(
+                      child: _buildProfileHeader(),
+                    ),
+
+                    // Statistics
+                    SliverToBoxAdapter(
+                      child: _buildStatistics(),
+                    ),
+
+                    // Menu Items
+                    SliverList(
+                      delegate: SliverChildListDelegate([
+                        _buildMenuSection('Compte', [
+                          _buildMenuItem(
+                            'Informations personnelles',
+                            Icons.person_outline,
+                            _editProfile,
+                          ),
+                          _buildMenuItem(
+                            'Sécurité',
+                            Icons.security_outlined,
+                            _showSettings,
+                          ),
+                          _buildMenuItem(
+                            'Notifications',
+                            Icons.notifications_outlined,
+                            _showSettings,
+                          ),
+                        ]),
+                        
+                        _buildMenuSection('Support', [
+                          _buildMenuItem(
+                            'Centre d\'aide',
+                            Icons.help_outline,
+                            _showHelp,
+                          ),
+                          _buildMenuItem(
+                            'Contactez-nous',
+                            Icons.email_outlined,
+                            _showHelp,
+                          ),
+                          _buildMenuItem(
+                            'Conditions d\'utilisation',
+                            Icons.description_outlined,
+                            _showHelp,
+                          ),
+                        ]),
+                        
+                        _buildMenuSection('Application', [
+                          _buildMenuItem(
+                            'À propos',
+                            Icons.info_outline,
+                            _showHelp,
+                          ),
+                          _buildMenuItem(
+                            'Version ${AppConstants.appVersion}',
+                            Icons.phone_iphone_outlined,
+                            () {},
+                            showTrailing: false,
+                          ),
+                        ]),
+                        
+                        // Logout Button
+                        Container(
+                          margin: const EdgeInsets.all(16),
+                          child: OutlinedButton(
+                            onPressed: _logout,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppConstants.errorColor,
+                              side: BorderSide(color: AppConstants.errorColor),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.logout, size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Déconnexion',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 20),
+                      ]),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            SizedBox(height: 2.h),
-            
-            // Bouton d'édition
-            OutlinedButton.icon(
-              onPressed: () {
-                // Éditer le profil
-              },
-              icon: const Icon(Icons.edit),
-              label: Text(
-                'Modifier le profil',
-                style: GoogleFonts.roboto(
-                  fontWeight: FontWeight.w500,
+    );
+  }
+
+  Widget _buildProfileHeader() {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Avatar and Name
+          Column(
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: AppConstants.primaryColor,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppConstants.primaryColor.withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.person,
+                  size: 40,
+                  color: Colors.white,
                 ),
               ),
-              style: OutlinedButton.styleFrom(
-                minimumSize: Size(double.infinity, 40.sp),
-                shape: RoundedRectangleBorder(
+              const SizedBox(height: 16),
+              Text(
+                _user!.name,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppConstants.textColor,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _user!.email,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppConstants.textColor.withOpacity(0.6),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppConstants.primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatsSection() {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: EdgeInsets.all(16.sp),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Mes Statistiques',
-              style: GoogleFonts.roboto(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(height: 2.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildStatItem('Investissements', user.totalInvestments.toString(), Icons.assignment),
-                _buildStatItem('Portefeuille', '${(user.totalPortfolioValue / 1000).toStringAsFixed(0)}K', Icons.account_balance_wallet),
-                _buildStatItem('Rendement', '${user.averageReturn.toStringAsFixed(1)}%', Icons.trending_up),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String title, String value, IconData icon) {
-    return Column(
-      children: [
-        Container(
-          width: 16.w,
-          height: 16.w,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            icon,
-            color: Theme.of(context).colorScheme.primary,
-            size: 8.w,
-          ),
-        ),
-        SizedBox(height: 1.h),
-        Text(
-          value,
-          style: GoogleFonts.roboto(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        Text(
-          title,
-          style: GoogleFonts.roboto(
-            fontSize: 12.sp,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMenuSection() {
-    final List<Map<String, dynamic>> menuItems = [
-      {
-        'title': 'Mes Documents',
-        'subtitle': 'Contrats et rapports',
-        'icon': Icons.folder,
-        'color': Colors.blue,
-      },
-      {
-        'title': 'Historique',
-        'subtitle': 'Transactions et activités',
-        'icon': Icons.history,
-        'color': Colors.green,
-      },
-      {
-        'title': 'Support',
-        'subtitle': 'Centre d\'aide et contact',
-        'icon': Icons.support_agent,
-        'color': Colors.orange,
-      },
-      {
-        'title': 'Sécurité',
-        'subtitle': 'Mot de passe et authentification',
-        'icon': Icons.security,
-        'color': Colors.red,
-      },
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Menu',
-          style: GoogleFonts.roboto(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        SizedBox(height: 2.h),
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: menuItems.length,
-          separatorBuilder: (context, index) => SizedBox(height: 1.h),
-          itemBuilder: (context, index) {
-            final item = menuItems[index];
-            final Color color = item['color'] as Color;
-            final IconData icon = item['icon'] as IconData;
-            final String title = item['title'] as String;
-            final String subtitle = item['subtitle'] as String;
-            
-            return Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: ListTile(
-                leading: Container(
-                  width: 40.sp,
-                  height: 40.sp,
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(
-                    icon,
-                    color: color,
-                  ),
-                ),
-                title: Text(
-                  title,
-                  style: GoogleFonts.roboto(
+                child: Text(
+                  _user!.role.displayName,
+                  style: TextStyle(
+                    fontSize: 14,
                     fontWeight: FontWeight.w500,
+                    color: AppConstants.primaryColor,
                   ),
                 ),
-                subtitle: Text(
-                  subtitle,
-                  style: GoogleFonts.roboto(
-                    fontSize: 12.sp,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                trailing: Icon(
-                  Icons.arrow_forward_ios,
-                  size: 16.sp,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                onTap: () {
-                  // Navigation vers l'écran correspondant
-                },
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPreferencesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Préférences',
-          style: GoogleFonts.roboto(
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        SizedBox(height: 2.h),
-        Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: Column(
-            children: [
-              SwitchListTile(
-                title: Text(
-                  'Notifications',
-                  style: GoogleFonts.roboto(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                subtitle: Text(
-                  'Recevoir les alertes et mises à jour',
-                  style: GoogleFonts.roboto(
-                    fontSize: 12.sp,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                value: notifications,
-                onChanged: (value) {
-                  setState(() {
-                    notifications = value;
-                  });
-                },
-              ),
-              const Divider(height: 1),
-              SwitchListTile(
-                title: Text(
-                  'Mode Sombre',
-                  style: GoogleFonts.roboto(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                subtitle: Text(
-                  'Activer l\'apparence sombre',
-                  style: GoogleFonts.roboto(
-                    fontSize: 12.sp,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                value: darkMode,
-                onChanged: (value) {
-                  setState(() {
-                    darkMode = value;
-                  });
-                },
-              ),
-              const Divider(height: 1),
-              SwitchListTile(
-                title: Text(
-                  'Authentification Biométrique',
-                  style: GoogleFonts.roboto(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                subtitle: Text(
-                  'Utiliser l\'empreinte digitale',
-                  style: GoogleFonts.roboto(
-                    fontSize: 12.sp,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                value: biometricAuth,
-                onChanged: (value) {
-                  setState(() {
-                    biometricAuth = value;
-                  });
-                },
               ),
             ],
           ),
-        ),
-        SizedBox(height: 3.h),
-        
-        // Bouton de déconnexion
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            onPressed: () {
-              _showLogoutDialog();
-            },
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppTheme.errorLight,
-              side: BorderSide(color: AppTheme.errorLight),
-              padding: EdgeInsets.symmetric(vertical: 12.sp),
-              shape: RoundedRectangleBorder(
+          
+          const SizedBox(height: 20),
+          
+          // Additional Info
+          if (_user!.location != null || _user!.phone != null)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(12),
               ),
-            ),
-            child: Text(
-              'Se Déconnecter',
-              style: GoogleFonts.roboto(
-                fontWeight: FontWeight.w600,
+              child: Row(
+                children: [
+                  if (_user!.location != null) ...[
+                    _buildInfoItem(Icons.location_on_outlined, _user!.location!),
+                    const SizedBox(width: 16),
+                  ],
+                  if (_user!.phone != null)
+                    _buildInfoItem(Icons.phone_outlined, _user!.phone!),
+                ],
               ),
             ),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  void _showLogoutDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Déconnexion',
-          style: GoogleFonts.roboto(
-            fontWeight: FontWeight.w600,
+  Widget _buildStatistics() {
+    if (_user!.role == UserRole.admin) {
+      return const SizedBox(); // Admins don't have portfolio stats
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-        ),
-        content: Text(
-          'Êtes-vous sûr de vouloir vous déconnecter de votre compte ?',
-          style: GoogleFonts.roboto(),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Annuler',
-              style: GoogleFonts.roboto(),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _user!.role == UserRole.farmer ? 'Mes Statistiques' : 'Mes Investissements',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppConstants.textColor,
             ),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Logique de déconnexion
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.errorLight,
-            ),
-            child: Text(
-              'Déconnexion',
-              style: GoogleFonts.roboto(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+          
+          const SizedBox(height: 16),
+          
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 1.5,
+            children: _user!.role == UserRole.farmer 
+                ? _buildFarmerStats()
+                : _buildInvestorStats(),
           ),
         ],
       ),
     );
   }
-}
 
-class UserProfile {
-  final String name;
-  final String email;
-  final String phone;
-  final String joinDate;
-  final int totalInvestments;
-  final double totalPortfolioValue;
-  final double averageReturn;
+  List<Widget> _buildFarmerStats() {
+    final totalProjects = _portfolioData['totalProjects'] ?? 0;
+    final completedProjects = _portfolioData['completedProjects'] ?? 0;
+    final totalRaised = _portfolioData['totalRaised'] ?? 0.0;
+    final averageROI = _portfolioData['averageROI'] ?? 0.0;
 
-  UserProfile({
-    required this.name,
-    required this.email,
-    required this.phone,
-    required this.joinDate,
-    required this.totalInvestments,
-    required this.totalPortfolioValue,
-    required this.averageReturn,
-  });
+    return [
+      _buildStatItem('Projets', '$totalProjects', Icons.business_center),
+      _buildStatItem('Terminés', '$completedProjects', Icons.check_circle),
+      _buildStatItem('Levés', '${totalRaised.toStringAsFixed(0)}', Icons.attach_money),
+      _buildStatItem('ROI Moyen', '${averageROI.toStringAsFixed(1)}%', Icons.trending_up),
+    ];
+  }
+
+  List<Widget> _buildInvestorStats() {
+    final totalInvested = _portfolioData['totalInvested'] ?? 0.0;
+    final currentValue = _portfolioData['currentValue'] ?? 0.0;
+    final activeInvestments = _portfolioData['activeInvestments'] ?? 0;
+    final overallROI = _portfolioData['overallROI'] ?? 0.0;
+
+    return [
+      _buildStatItem('Investi', '${totalInvested.toStringAsFixed(0)}', Icons.account_balance_wallet),
+      _buildStatItem('Valeur Actuelle', '${currentValue.toStringAsFixed(0)}', Icons.attach_money),
+      _buildStatItem('Investissements', '$activeInvestments', Icons.business_center),
+      _buildStatItem('ROI Total', '${overallROI.toStringAsFixed(1)}%', Icons.analytics),
+    ];
+  }
+
+  Widget _buildStatItem(String label, String value, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppConstants.primaryColor.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppConstants.primaryColor.withOpacity(0.1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Icon(
+            icon,
+            color: AppConstants.primaryColor,
+            size: 20,
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppConstants.textColor,
+                ),
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppConstants.textColor.withOpacity(0.6),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoItem(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: AppConstants.textColor.withOpacity(0.5),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 14,
+            color: AppConstants.textColor.withOpacity(0.7),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMenuSection(String title, List<Widget> items) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppConstants.textColor.withOpacity(0.8),
+              ),
+            ),
+          ),
+          ...items,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(String title, IconData icon, VoidCallback onTap, {bool showTrailing = true}) {
+    return ListTile(
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: AppConstants.primaryColor.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          icon,
+          color: AppConstants.primaryColor,
+          size: 20,
+        ),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 16,
+          color: AppConstants.textColor,
+        ),
+      ),
+      trailing: showTrailing
+          ? Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: AppConstants.textColor.withOpacity(0.5),
+            )
+          : null,
+      onTap: onTap,
+    );
+  }
 }

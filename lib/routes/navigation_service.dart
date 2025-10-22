@@ -1,80 +1,145 @@
-// navigation_service.dart
-import 'package:agridash/core/models/crop_investment.dart';
-import 'package:agridash/routes/app_routes.dart';
+import 'package:agridash/routes/route_arguments.dart';
 import 'package:flutter/material.dart';
 
+import 'app_routes.dart';
+
 class NavigationService {
-  static Future<void> navigateToDashboard({
-    required BuildContext context,
-    required String userType,
-  }) async {
-    if (!context.mounted) return;
-    
-    await Navigator.pushNamed(
-      context,
-      AppRoutes.dashboardHome,
-      arguments: userType,
-    );
-  }
+  static final NavigationService _instance = NavigationService._internal();
+  factory NavigationService() => _instance;
+  NavigationService._internal();
 
-  static Future<void> navigateToCropDetail({
-    required BuildContext context,
-    required CropInvestment investment,
-  }) async {
-    if (!context.mounted) return;
-    
-    await Navigator.pushNamed(
-      context,
-      AppRoutes.cropDetail,
-      arguments: investment,
-    );
-  }
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-  static Future<void> navigateToProjectDetails({
-    required BuildContext context,
-    required Map<String, dynamic> projectData,
-  }) async {
-    if (!context.mounted) return;
-    
-    await Navigator.pushNamed(
-      context,
-      AppRoutes.projectDetails,
-      arguments: projectData,
-    );
-  }
+  BuildContext? get context => navigatorKey.currentContext;
 
-  static Future<void> navigateToMarketplace(BuildContext context) async {
-    if (!context.mounted) return;
-    
-    await Navigator.pushNamed(context, AppRoutes.marketplace);
-  }
-
-  // Méthode pour remplacer complètement la stack de navigation
-  static Future<void> replaceWithDashboard({
-    required BuildContext context,
-    required String userType,
-  }) async {
-    if (!context.mounted) return;
-    
-    await Navigator.pushReplacementNamed(
-      context,
-      AppRoutes.dashboardHome,
-      arguments: userType,
-    );
-  }
-
-  // Navigation avec retour de résultat
-  static Future<T?> navigateForResult<T>({
-    required BuildContext context,
-    required String routeName,
-    Object? arguments,
-  }) async {
-    if (!context.mounted) return null;
-    
-    return await Navigator.pushNamed(
-      context,
+  Future<dynamic> navigateTo(String routeName, {Object? arguments}) {
+    return navigatorKey.currentState!.pushNamed(
       routeName,
       arguments: arguments,
     );
+  }
+
+  Future<dynamic> navigateReplacement(String routeName, {Object? arguments}) {
+    return navigatorKey.currentState!.pushReplacementNamed(
+      routeName,
+      arguments: arguments,
+    );
+  }
+
+  Future<dynamic> navigateAndRemoveUntil(String routeName, {Object? arguments}) {
+    return navigatorKey.currentState!.pushNamedAndRemoveUntil(
+      routeName,
+      (route) => false,
+      arguments: arguments,
+    );
+  }
+
+  void goBack([dynamic result]) {
+    if (navigatorKey.currentState!.canPop()) {
+      navigatorKey.currentState!.pop(result);
+    }
+  }
+
+  // Specific navigation methods for common flows
+  void toLogin() {
+    navigateAndRemoveUntil(AppRoutes.loginScreen);
+  }
+
+  void toDashboard() {
+    navigateAndRemoveUntil(AppRoutes.dashboardHome);
+  }
+
+  void toProjectDetails(String projectId) {
+    navigateTo(
+      AppRoutes.projectDetails,
+      arguments: ProjectDetailsArgs(projectId: projectId),
+    );
+  }
+
+  void toCropDetails(String cropId) {
+    navigateTo(
+      AppRoutes.cropDetailView,
+      arguments: CropDetailArgs(cropId: cropId),
+    );
+  }
+
+  void toMarketplace() {
+    navigateTo(AppRoutes.marketplace);
+  }
+
+  void toPortfolio() {
+    navigateTo(AppRoutes.portfolioManagement);
+  }
+
+  void toInvestmentTracking() {
+    navigateTo(AppRoutes.investmentTracking);
+  }
+
+  void toProjectCreation() {
+    navigateTo(AppRoutes.projectCreation);
+  }
+
+  void toProfile() {
+    navigateTo(AppRoutes.userProfile);
+  }
+
+  // Dialog utilities
+  void showErrorDialog(String message) {
+    showDialog(
+      context: navigatorKey.currentContext!,
+      builder: (context) => AlertDialog(
+        title: Text('Erreur'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => goBack(),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void showSuccessDialog(String message) {
+    showDialog(
+      context: navigatorKey.currentContext!,
+      builder: (context) => AlertDialog(
+        title: Text('Succès'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => goBack(),
+            child: Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool> showConfirmationDialog({
+    required String title,
+    required String message,
+    String confirmText = 'Confirmer',
+    String cancelText = 'Annuler',
+  }) async {
+    final result = await showDialog<bool>(
+      context: navigatorKey.currentContext!,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => goBack(false),
+            child: Text(cancelText),
+          ),
+          ElevatedButton(
+            onPressed: () => goBack(true),
+            child: Text(confirmText),
+          ),
+        ],
+      ),
+    );
+
+    return result ?? false;
   }
 }

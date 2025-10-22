@@ -1,39 +1,154 @@
-import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
-
-import '../../../core/app_export.dart';
+import 'package:agridash/core/app_export.dart';
 
 class RecentTransactionsCardWidget extends StatelessWidget {
-  final List<Map<String, dynamic>> transactions;
-  final VoidCallback onViewAll;
+  final UserRole userRole;
 
   const RecentTransactionsCardWidget({
     super.key,
-    required this.transactions,
-    required this.onViewAll,
+    required this.userRole,
   });
+
+  List<Map<String, dynamic>> _getDemoTransactions() {
+    switch (userRole) {
+      case UserRole.farmer:
+        return [
+          {
+            'type': 'financement',
+            'project': 'Culture de Maïs Bio',
+            'amount': 15000.0,
+            'date': '2024-01-15',
+            'status': 'completed',
+            'investor': 'Marie Investisseur',
+          },
+          {
+            'type': 'retrait',
+            'project': 'Serres de Tomates',
+            'amount': 5000.0,
+            'date': '2024-01-12',
+            'status': 'completed',
+            'investor': '',
+          },
+          {
+            'type': 'financement',
+            'project': 'Verger de Pommes',
+            'amount': 8000.0,
+            'date': '2024-01-10',
+            'status': 'pending',
+            'investor': 'Pierre Capital',
+          },
+        ];
+      case UserRole.investor:
+        return [
+          {
+            'type': 'investissement',
+            'project': 'Culture de Maïs Bio',
+            'amount': 15000.0,
+            'date': '2024-01-15',
+            'status': 'completed',
+            'farmer': 'Jean Dupont',
+          },
+          {
+            'type': 'dividende',
+            'project': 'Serres de Tomates',
+            'amount': 2500.0,
+            'date': '2024-01-12',
+            'status': 'completed',
+            'farmer': 'Jean Dupont',
+          },
+          {
+            'type': 'investissement',
+            'project': 'Verger de Pommes',
+            'amount': 8000.0,
+            'date': '2024-01-10',
+            'status': 'pending',
+            'farmer': 'Paul Fermier',
+          },
+        ];
+      case UserRole.admin:
+        return [
+          {
+            'type': 'commission',
+            'project': 'Culture de Maïs Bio',
+            'amount': 750.0,
+            'date': '2024-01-15',
+            'status': 'completed',
+            'users': 'Jean Dupont & Marie Invest.',
+          },
+          {
+            'type': 'frais',
+            'project': 'Serres de Tomates',
+            'amount': 500.0,
+            'date': '2024-01-12',
+            'status': 'completed',
+            'users': 'Transaction système',
+          },
+          {
+            'type': 'commission',
+            'project': 'Verger de Pommes',
+            'amount': 400.0,
+            'date': '2024-01-10',
+            'status': 'pending',
+            'users': 'Paul Fermier & Pierre Capital',
+          },
+        ];
+    }
+  }
+
+  String _getTransactionTitle(Map<String, dynamic> transaction) {
+    switch (userRole) {
+      case UserRole.farmer:
+        return transaction['type'] == 'financement' 
+            ? 'Financement reçu - ${transaction['investor']}'
+            : 'Retrait effectué';
+      case UserRole.investor:
+        return transaction['type'] == 'investissement'
+            ? 'Investissement - ${transaction['farmer']}'
+            : 'Dividende reçu - ${transaction['farmer']}';
+      case UserRole.admin:
+        return '${transaction['type']} - ${transaction['users']}';
+    }
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'completed':
+        return AppConstants.successColor;
+      case 'pending':
+        return AppConstants.warningColor;
+      case 'failed':
+        return AppConstants.errorColor;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _getStatusText(String status) {
+    switch (status) {
+      case 'completed':
+        return 'Terminé';
+      case 'pending':
+        return 'En attente';
+      case 'failed':
+        return 'Échoué';
+      default:
+        return status;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final transactions = _getDemoTransactions();
+
     return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(4.w),
-      margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.lightTheme.colorScheme.tertiary,
-            AppTheme.lightTheme.colorScheme.tertiary.withValues(alpha: 0.8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color:
-                AppTheme.lightTheme.colorScheme.tertiary.withValues(alpha: 0.3),
-            blurRadius: 8,
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
@@ -41,149 +156,123 @@ class RecentTransactionsCardWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              CustomIconWidget(
-                iconName: 'account_balance_wallet',
-                color: Colors.white,
-                size: 24,
-              ),
-              SizedBox(width: 2.w),
-              Expanded(
-                child: Text(
-                  'Transactions Récentes',
-                  style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              GestureDetector(
-                onTap: onViewAll,
-                child: Text(
-                  'Voir tout',
-                  style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
+          Text(
+            'Transactions Récentes',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppConstants.textColor,
+            ),
           ),
-          SizedBox(height: 2.h),
-          ...transactions
-              .take(3)
-              .map((transaction) => Container(
-                    margin: EdgeInsets.only(bottom: 1.h),
-                    padding: EdgeInsets.all(3.w),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 8.w,
-                          height: 8.w,
-                          decoration: BoxDecoration(
-                            color: _getTransactionColor(
-                                transaction["type"] as String),
-                            shape: BoxShape.circle,
-                          ),
-                          child: CustomIconWidget(
-                            iconName: _getTransactionIcon(
-                                transaction["type"] as String),
-                            color: Colors.white,
-                            size: 16,
-                          ),
-                        ),
-                        SizedBox(width: 3.w),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                transaction["description"] as String,
-                                style: AppTheme.lightTheme.textTheme.bodyMedium
-                                    ?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                transaction["date"] as String,
-                                style: AppTheme.lightTheme.textTheme.bodySmall
-                                    ?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.7),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Text(
-                          transaction["amount"] as String,
-                          style: AppTheme.lightTheme.textTheme.titleSmall
-                              ?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ))
-              .toList(),
-          if (transactions.length > 3) ...[
-            SizedBox(height: 1.h),
-            Center(
-              child: GestureDetector(
-                onTap: onViewAll,
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '+${transactions.length - 3} autres transactions',
-                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+          const SizedBox(height: 16),
+          ...transactions.map((transaction) => _buildTransactionItem(transaction)),
+          const SizedBox(height: 8),
+          Center(
+            child: TextButton(
+              onPressed: () {
+                NavigationService().showSuccessDialog('Historique complet des transactions en cours de développement');
+              },
+              child: Text(
+                'Voir l\'historique complet',
+                style: TextStyle(
+                  color: AppConstants.primaryColor,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
   }
 
-  Color _getTransactionColor(String type) {
-    switch (type.toLowerCase()) {
-      case 'investment':
-        return Colors.green;
-      case 'withdrawal':
-        return Colors.red;
-      case 'dividend':
-        return Colors.blue;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  String _getTransactionIcon(String type) {
-    switch (type.toLowerCase()) {
-      case 'investment':
-        return 'arrow_upward';
-      case 'withdrawal':
-        return 'arrow_downward';
-      case 'dividend':
-        return 'monetization_on';
-      default:
-        return 'swap_horiz';
-    }
+  Widget _buildTransactionItem(Map<String, dynamic> transaction) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          // Transaction Icon
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppConstants.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              transaction['type'] == 'investissement' || transaction['type'] == 'financement'
+                  ? Icons.arrow_downward
+                  : Icons.arrow_upward,
+              color: AppConstants.primaryColor,
+              size: 20,
+            ),
+          ),
+          
+          const SizedBox(width: 12),
+          
+          // Transaction Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _getTransactionTitle(transaction),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: AppConstants.textColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  transaction['project'],
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppConstants.textColor.withOpacity(0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          // Amount and Status
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${transaction['amount'].toStringAsFixed(0)} FCFA',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppConstants.textColor,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: _getStatusColor(transaction['status']).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  _getStatusText(transaction['status']),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: _getStatusColor(transaction['status']),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }

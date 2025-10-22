@@ -1,294 +1,302 @@
-import 'package:agridash/core/index.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
+import 'package:agridash/core/app_export.dart';
 
+class CropDetailView extends StatefulWidget {
+  final CropDetailArgs args;
 
-class CropDetailScreen extends StatefulWidget {
-  final CropInvestment investment;
-
-  const CropDetailScreen({super.key, required this.investment});
+  const CropDetailView({
+    super.key,
+    required this.args,
+  });
 
   @override
-  State<CropDetailScreen> createState() => _CropDetailScreenState();
+  State<CropDetailView> createState() => _CropDetailViewState();
 }
 
-class _CropDetailScreenState extends State<CropDetailScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _CropDetailViewState extends State<CropDetailView> {
+  final ProjectService _projectService = ProjectService();
+  
+  CropProject? _project;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _loadCropDetails();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
+  Future<void> _loadCropDetails() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      if (widget.args.projectId != null) {
+        _project = await _projectService.getProjectById(widget.args.projectId!);
+      }
+      // If no project ID, we could load crop information from another source
+      
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      NavigationService().showErrorDialog('Erreur lors du chargement des détails: $e');
+    }
+  }
+
+  Map<String, dynamic> _getCropInfo(String cropId) {
+    // Demo crop information
+    final cropData = {
+      'maize': {
+        'name': 'Maïs',
+        'scientificName': 'Zea mays',
+        'family': 'Poaceae',
+        'season': 'Printemps',
+        'duration': '90-120 jours',
+        'climate': 'Tropical à tempéré',
+        'soil': 'Sol bien drainé, riche en matière organique',
+        'water': 'Modérée à élevée',
+        'description': 'Le maïs est une céréale largement cultivée pour ses grains riches en amidon. C\'est une culture de base dans de nombreuses régions du monde.',
+        'bestPractices': [
+          'Rotation des cultures pour prévenir les maladies',
+          'Fertilisation équilibrée en NPK',
+          'Contrôle des mauvaises herbes',
+          'Irrigation régulière pendant la floraison'
+        ],
+        'challenges': [
+          'Sensibilité à la sécheresse',
+          'Ravageurs comme la pyrale du maïs',
+          'Maladies fongiques',
+          'Concurrence des mauvaises herbes'
+        ],
+        'marketValue': 'Élevée - culture de base',
+        'image': 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800',
+      },
+      'rice': {
+        'name': 'Riz',
+        'scientificName': 'Oryza sativa',
+        'family': 'Poaceae',
+        'season': 'Saison des pluies',
+        'duration': '100-150 jours',
+        'climate': 'Tropical et subtropical',
+        'soil': 'Sol argileux, capacité de rétention d\'eau',
+        'water': 'Très élevée (culture inondée)',
+        'description': 'Le riz est la céréale la plus consommée au monde, particulièrement en Asie. Il nécessite des conditions spécifiques de culture.',
+        'bestPractices': [
+          'Préparation soignée des rizières',
+          'Gestion précise de l\'eau',
+          'Utilisation de variétés adaptées',
+          'Contrôle des adventices aquatiques'
+        ],
+        'challenges': [
+          'Besoins en eau importants',
+          'Sensibilité aux maladies',
+          'Coûts de production élevés',
+          'Impact environnemental'
+        ],
+        'marketValue': 'Très élevée - aliment de base',
+        'image': 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=800',
+      },
+      // Add more crops as needed
+    };
+
+    return cropData[cropId] ?? {
+      'name': 'Culture',
+      'scientificName': 'Non spécifié',
+      'family': 'Non spécifié',
+      'season': 'Variable',
+      'duration': 'Variable',
+      'climate': 'Variable',
+      'soil': 'Variable',
+      'water': 'Variable',
+      'description': 'Informations non disponibles pour cette culture.',
+      'bestPractices': [],
+      'challenges': [],
+      'marketValue': 'Variable',
+      'image': 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800',
+    };
   }
 
   @override
   Widget build(BuildContext context) {
+    final cropInfo = _getCropInfo(widget.args.cropId);
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.investment.name,
-          style: GoogleFonts.roboto(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {},
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: Theme.of(context).colorScheme.primary,
-          unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
-          indicatorColor: Theme.of(context).colorScheme.primary,
-          tabs: const [
-            Tab(text: 'Aperçu'),
-            Tab(text: 'Performance'),
-            Tab(text: 'Documents'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildOverviewTab(),
-          _buildPerformanceTab(),
-          _buildDocumentsTab(),
-        ],
-      ),
-      bottomNavigationBar: _buildActionButtons(),
-    );
-  }
+      backgroundColor: AppConstants.backgroundColor,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : CustomScrollView(
+              slivers: [
+                // Header with Image
+                SliverAppBar(
+                  expandedHeight: 300,
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Image.network(
+                      cropInfo['image'],
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  actions: [
+                    IconButton(
+                      onPressed: () => NavigationService().goBack(),
+                      icon: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.close, color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
 
- Widget _buildOverviewTab() {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16.sp),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Description',
-            style: GoogleFonts.roboto(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: 2.h),
-          Text(
-            'Investissement dans la culture de ${widget.investment.name}. '
-            'Ce projet agricole vise à optimiser les rendements grâce à des techniques modernes '
-            'et durables de production.',
-            style: GoogleFonts.roboto(
-              fontSize: 14.sp,
-              height: 1.5,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          SizedBox(height: 3.h),
-          
-          Text(
-            'Détails Techniques',
-            style: GoogleFonts.roboto(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: 2.h),
-          _buildDetailItem('Superficie', '50 hectares'),
-          _buildDetailItem('Rendement estimé', '8 tonnes/ha'),
-          _buildDetailItem('Période de récolte', 'Novembre 2024'),
-          _buildDetailItem('Localisation', 'Zone Nord'),
-          _buildDetailItem('Technologie', 'Irrigation moderne'),
-          
-          SizedBox(height: 3.h),
-          Text(
-            'Risques et Opportunités',
-            style: GoogleFonts.roboto(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: 2.h),
-          _buildRiskItem('Risques climatiques', 'Modéré', AppTheme.warningLight),
-          _buildRiskItem('Stabilité des prix', 'Élevé', AppTheme.successLight),
-          _buildRiskItem('Demande marché', 'Très élevé', AppTheme.successLight),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailItem(String title, String value) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 1.h),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: GoogleFonts.roboto(
-              fontSize: 14.sp,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          Text(
-            value,
-            style: GoogleFonts.roboto(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRiskItem(String title, String level, Color color) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 1.h),
-      child: Row(
-        children: [
-          Container(
-            width: 8.sp,
-            height: 8.sp,
-            decoration: BoxDecoration(
-              color: color,
-              shape: BoxShape.circle,
-            ),
-          ),
-          SizedBox(width: 3.w),
-          Expanded(
-            child: Text(
-              title,
-              style: GoogleFonts.roboto(
-                fontSize: 14.sp,
-              ),
-            ),
-          ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12.sp, vertical: 4.sp),
-            decoration: BoxDecoration(
-              color: color.withValues(),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              level,
-              style: GoogleFonts.roboto(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w500,
-                color: color,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPerformanceTab() {
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16.sp),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Évolution de la Valeur',
-            style: GoogleFonts.roboto(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: 2.h),
-          Container(
-            height: 20.h,
-            padding: EdgeInsets.all(16.sp),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+                // Content
+                SliverToBoxAdapter(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Title
+                        Text(
+                          cropInfo['name'],
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: AppConstants.textColor,
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 8),
+                        
+                        // Scientific Name
+                        Text(
+                          cropInfo['scientificName'],
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontStyle: FontStyle.italic,
+                            color: AppConstants.textColor.withOpacity(0.6),
+                          ),
+                        ),
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Quick Facts
+                        _buildQuickFacts(cropInfo),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Description
+                        _buildSection(
+                          'Description',
+                          cropInfo['description'],
+                          Icons.description,
+                        ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Best Practices
+                        if (cropInfo['bestPractices'].isNotEmpty)
+                          _buildListSection(
+                            'Pratiques Recommandées',
+                            cropInfo['bestPractices'],
+                            Icons.thumb_up,
+                            AppConstants.successColor,
+                          ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Challenges
+                        if (cropInfo['challenges'].isNotEmpty)
+                          _buildListSection(
+                            'Défis et Considérations',
+                            cropInfo['challenges'],
+                            Icons.warning,
+                            AppConstants.warningColor,
+                          ),
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Market Info
+                        _buildMarketInfo(cropInfo),
+                        
+                        const SizedBox(height: 32),
+                        
+                        // Related Projects (if any)
+                        if (_project != null) _buildRelatedProjects(),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
-            child: LineChart(
-              LineChartData(
-                gridData: const FlGridData(show: false),
-                titlesData: const FlTitlesData(show: false),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: [
-                      const FlSpot(0, 1),
-                      const FlSpot(1, 1.2),
-                      const FlSpot(2, 1.1),
-                      const FlSpot(3, 1.3),
-                      const FlSpot(4, 1.4),
-                      const FlSpot(5, 1.5),
-                      const FlSpot(6, 1.6),
-                    ],
-                    isCurved: true,
-                    color: Theme.of(context).colorScheme.primary,
-                    barWidth: 3,
-                    belowBarData: BarAreaData(show: false),
-                  ),
-                ],
-              ),
-            ),
+    );
+  }
+
+  Widget _buildQuickFacts(Map<String, dynamic> cropInfo) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          SizedBox(height: 3.h),
-          
-          Text(
-            'Indicateurs Clés',
-            style: GoogleFonts.roboto(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-            ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              _buildFactItem('Famille', cropInfo['family'], Icons.category),
+              _buildFactItem('Saison', cropInfo['season'], Icons.calendar_today),
+            ],
           ),
-          SizedBox(height: 2.h),
-          _buildKPIItem('ROI Actuel', '${widget.investment.returnPercentage.toStringAsFixed(1)}%'),
-          _buildKPIItem('ROI Projeté', '22.5%'),
-          _buildKPIItem('Rendement Physique', '95%'),
-          _buildKPIItem('Satisfaction', '88%'),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _buildFactItem('Durée', cropInfo['duration'], Icons.schedule),
+              _buildFactItem('Climat', cropInfo['climate'], Icons.wb_sunny),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildKPIItem(String title, String value) {
-    return Card(
-      margin: EdgeInsets.only(bottom: 2.h),
-      child: Padding(
-        padding: EdgeInsets.all(16.sp),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildFactItem(String label, String value, IconData icon) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        child: Column(
           children: [
+            Icon(
+              icon,
+              size: 20,
+              color: AppConstants.primaryColor,
+            ),
+            const SizedBox(height: 8),
             Text(
-              title,
-              style: GoogleFonts.roboto(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w500,
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: AppConstants.textColor.withOpacity(0.6),
               ),
             ),
+            const SizedBox(height: 4),
             Text(
               value,
-              style: GoogleFonts.roboto(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w700,
-                color: Theme.of(context).colorScheme.primary,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppConstants.textColor,
               ),
             ),
           ],
@@ -297,112 +305,266 @@ class _CropDetailScreenState extends State<CropDetailScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildDocumentsTab() {
-    final documents = [
-      {'name': 'Contrat d\'investissement', 'date': '15 Jan 2024', 'size': '2.4 MB'},
-      {'name': 'Rapport technique', 'date': '10 Fév 2024', 'size': '1.8 MB'},
-      {'name': 'Analyse de marché', 'date': '05 Mar 2024', 'size': '3.2 MB'},
-      {'name': 'Certificat qualité', 'date': '20 Mar 2024', 'size': '1.1 MB'},
-    ];
-
-    return ListView.builder(
-      padding: EdgeInsets.all(16.sp),
-      itemCount: documents.length,
-      itemBuilder: (context, index) {
-        final doc = documents[index];
-        return Card(
-          margin: EdgeInsets.only(bottom: 2.h),
-          child: ListTile(
-            leading: Container(
-              width: 40.sp,
-              height: 40.sp,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withValues(),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.description,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            title: Text(
-              doc['name']!,
-              style: GoogleFonts.roboto(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            subtitle: Text(
-              '${doc['date']} • ${doc['size']}',
-              style: GoogleFonts.roboto(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            trailing: IconButton(
-              icon: Icon(
-                Icons.download,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              onPressed: () {},
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildActionButtons() {
+  Widget _buildSection(String title, String content, IconData icon) {
     return Container(
-      padding: EdgeInsets.all(16.sp),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 8,
-            offset: const Offset(0, -2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () {
-                // Action de vente
-              },
-              style: OutlinedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 12.sp),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          Row(
+            children: [
+              Icon(
+                icon,
+                color: AppConstants.primaryColor,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppConstants.textColor,
                 ),
               ),
-              child: Text(
-                'Vendre',
-                style: GoogleFonts.roboto(
-                  fontWeight: FontWeight.w600,
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            content,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppConstants.textColor.withOpacity(0.8),
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListSection(String title, List<dynamic> items, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                icon,
+                color: color,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppConstants.textColor,
                 ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...items.map((item) => _buildListItem(item, color)).toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListItem(String text, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.circle,
+            size: 8,
+            color: color,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppConstants.textColor.withOpacity(0.8),
+                height: 1.4,
               ),
             ),
           ),
-          SizedBox(width: 3.w),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: () {
-                // Action d'achat supplémentaire
-              },
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 12.sp),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMarketInfo(Map<String, dynamic> cropInfo) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.attach_money,
+                color: AppConstants.primaryColor,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Valeur Marchande',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppConstants.textColor,
                 ),
               ),
-              child: Text(
-                'Investir plus',
-                style: GoogleFonts.roboto(
-                  fontWeight: FontWeight.w600,
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppConstants.primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.trending_up,
+                  color: AppConstants.primaryColor,
+                  size: 24,
                 ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Potentiel de marché: ${cropInfo['marketValue']}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppConstants.textColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Demande stable avec bon potentiel de retour sur investissement',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppConstants.textColor.withOpacity(0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRelatedProjects() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Projets Associés',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppConstants.textColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ListTile(
+            leading: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: AppConstants.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.eco,
+                color: AppConstants.primaryColor,
+                size: 24,
               ),
             ),
+            title: Text(
+              _project!.title,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: AppConstants.textColor,
+              ),
+            ),
+            subtitle: Text(
+              '${_project!.progressPercentage.toStringAsFixed(0)}% financé • ${_project!.currentInvestment.toStringAsFixed(0)} FCFA',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppConstants.textColor.withOpacity(0.6),
+              ),
+            ),
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: AppConstants.textColor.withOpacity(0.5),
+            ),
+            onTap: () => NavigationService().toProjectDetails(_project!.id),
           ),
         ],
       ),

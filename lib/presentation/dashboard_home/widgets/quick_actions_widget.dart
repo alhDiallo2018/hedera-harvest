@@ -1,141 +1,187 @@
-import 'package:flutter/material.dart';
-import 'package:sizer/sizer.dart';
-
-import '../../../core/app_export.dart';
+import 'package:agridash/core/app_export.dart';
 
 class QuickActionsWidget extends StatelessWidget {
-  final VoidCallback onCreateProject;
-  final VoidCallback onViewMarketplace;
-  final VoidCallback onTrackInvestments;
-  final VoidCallback onManageProfile;
+  final UserRole userRole;
+  final Function(String) onActionSelected;
 
   const QuickActionsWidget({
     super.key,
-    required this.onCreateProject,
-    required this.onViewMarketplace,
-    required this.onTrackInvestments,
-    required this.onManageProfile,
+    required this.userRole,
+    required this.onActionSelected,
   });
+
+  List<Map<String, dynamic>> _getActions() {
+    switch (userRole) {
+      case UserRole.farmer:
+        return [
+          {
+            'icon': Icons.add_circle_outline,
+            'label': 'Créer Projet',
+            'color': AppConstants.primaryColor,
+            'action': 'create',
+          },
+          {
+            'icon': Icons.visibility_outlined,
+            'label': 'Mes Projets',
+            'color': AppConstants.accentColor,
+            'action': 'portfolio',
+          },
+          {
+            'icon': Icons.bar_chart_outlined,
+            'label': 'Statistiques',
+            'color': AppConstants.successColor,
+            'action': 'tracking',
+          },
+          {
+            'icon': Icons.people_outline,
+            'label': 'Investisseurs',
+            'color': AppConstants.warningColor,
+            'action': 'investors',
+          },
+        ];
+      case UserRole.investor:
+        return [
+          {
+            'icon': Icons.search_outlined,
+            'label': 'Découvrir',
+            'color': AppConstants.primaryColor,
+            'action': 'invest',
+          },
+          {
+            'icon': Icons.wallet_outlined,
+            'label': 'Portfolio',
+            'color': AppConstants.accentColor,
+            'action': 'portfolio',
+          },
+          {
+            'icon': Icons.track_changes_outlined,
+            'label': 'Suivi',
+            'color': AppConstants.successColor,
+            'action': 'tracking',
+          },
+          {
+            'icon': Icons.history_outlined,
+            'label': 'Historique',
+            'color': AppConstants.warningColor,
+            'action': 'history',
+          },
+        ];
+      case UserRole.admin:
+        return [
+          {
+            'icon': Icons.people_outline,
+            'label': 'Utilisateurs',
+            'color': AppConstants.primaryColor,
+            'action': 'users',
+          },
+          {
+            'icon': Icons.assignment_outlined,
+            'label': 'Projets',
+            'color': AppConstants.accentColor,
+            'action': 'projects',
+          },
+          {
+            'icon': Icons.analytics_outlined,
+            'label': 'Rapports',
+            'color': AppConstants.successColor,
+            'action': 'reports',
+          },
+          {
+            'icon': Icons.settings_outlined,
+            'label': 'Paramètres',
+            'color': AppConstants.warningColor,
+            'action': 'settings',
+          },
+        ];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView( // ⚡ Rend le widget scrollable si overflow
+    final actions = _getActions();
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Actions Rapides',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppConstants.textColor,
+            ),
+          ),
+          const SizedBox(height: 16),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.8,
+            ),
+            itemCount: actions.length,
+            itemBuilder: (context, index) {
+              final action = actions[index];
+              return _buildActionItem(
+                action['icon'] as IconData,
+                action['label'] as String,
+                action['color'] as Color,
+                action['action'] as String,
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionItem(IconData icon, String label, Color color, String action) {
+    return GestureDetector(
+      onTap: () => onActionSelected(action),
       child: Container(
-        padding: EdgeInsets.all(4.w),
-        margin: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
         decoration: BoxDecoration(
-          color: AppTheme.lightTheme.colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.lightTheme.shadowColor.withValues(alpha: 0.1),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'Actions Rapides',
-              style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppTheme.lightTheme.colorScheme.onSurface,
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: 24,
               ),
             ),
-            SizedBox(height: 2.h),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildQuickActionButton(
-                    icon: 'add_business',
-                    label: 'Nouveau\nProjet',
-                    color: AppTheme.lightTheme.colorScheme.primary,
-                    onTap: onCreateProject,
-                  ),
-                ),
-                SizedBox(width: 3.w),
-                Expanded(
-                  child: _buildQuickActionButton(
-                    icon: 'store',
-                    label: 'Marché\nInvestisseurs',
-                    color: AppTheme.lightTheme.colorScheme.secondary,
-                    onTap: onViewMarketplace,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 2.h),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildQuickActionButton(
-                    icon: 'trending_up',
-                    label: 'Suivi\nInvestissements',
-                    color: AppTheme.lightTheme.colorScheme.tertiary,
-                    onTap: onTrackInvestments,
-                  ),
-                ),
-                SizedBox(width: 3.w),
-                Expanded(
-                  child: _buildQuickActionButton(
-                    icon: 'person',
-                    label: 'Gérer\nProfil',
-                    color: const Color(0xFF66BB6A),
-                    onTap: onManageProfile,
-                  ),
-                ),
-              ],
+            const SizedBox(height: 8),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: AppConstants.textColor,
+              ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActionButton({
-    required String icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: LayoutBuilder( // ⚡ Rend la hauteur adaptative au parent
-        builder: (context, constraints) {
-          return Container(
-            padding: EdgeInsets.all(3.w),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: color.withValues(alpha: 0.3),
-                width: 1,
-              ),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CustomIconWidget(
-                  iconName: icon,
-                  color: color,
-                  size: 24,
-                ),
-                SizedBox(height: 1.h),
-                Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w500,
-                    height: 1.2,
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
       ),
     );
   }

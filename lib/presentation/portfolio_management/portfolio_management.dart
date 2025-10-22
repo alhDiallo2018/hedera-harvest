@@ -1,466 +1,455 @@
-import 'package:agridash/routes/navigation_service.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:sizer/sizer.dart';
+import 'package:agridash/core/app_export.dart';
 
-import '../../core/models/crop_investment.dart';
-import '../../theme/app_theme.dart';
-
-class PortfolioManagementScreen extends StatefulWidget {
-  const PortfolioManagementScreen({super.key});
+class PortfolioManagement extends StatefulWidget {
+  const PortfolioManagement({super.key});
 
   @override
-  State<PortfolioManagementScreen> createState() => _PortfolioManagementScreenState();
+  State<PortfolioManagement> createState() => _PortfolioManagementState();
 }
 
-class _PortfolioManagementScreenState extends State<PortfolioManagementScreen> {
-  final List<CropInvestment> investments = [
-    CropInvestment(
-      id: '1',
-      name: 'Maïs Premium',
-      type: 'Céréales',
-      investedAmount: 150000,
-      currentValue: 175000,
-      returnPercentage: 16.7,
-      duration: '12 mois',
-      status: 'Actif',
-      tokenId: '0.0.1234567',
-      farmerId: 'farmer_001',
-      totalTokens: 100,
-      availableTokens: 40,
-      tokenPrice: 1500,
-      harvestDate: DateTime.now().add(Duration(days: 120)),
-      estimatedYield: 8.5,
-    ),
-    CropInvestment(
-      id: '2',
-      name: 'Riz Bio',
-      type: 'Riziculture',
-      investedAmount: 80000,
-      currentValue: 92000,
-      returnPercentage: 15.0,
-      duration: '8 mois',
-      status: 'Actif',
-      tokenId: '0.0.1234568',
-      farmerId: 'farmer_002',
-      totalTokens: 80,
-      availableTokens: 25,
-      tokenPrice: 1000,
-      harvestDate: DateTime.now().add(Duration(days: 90)),
-      estimatedYield: 7.2,
-    ),
-    CropInvestment(
-      id: '3',
-      name: 'Café Arabica',
-      type: 'Plantation',
-      investedAmount: 200000,
-      currentValue: 185000,
-      returnPercentage: -7.5,
-      duration: '18 mois',
-      status: 'En attente',
-      tokenId: '0.0.1234569',
-      farmerId: 'farmer_003',
-      totalTokens: 200,
-      availableTokens: 200,
-      tokenPrice: 1000,
-      harvestDate: DateTime.now().add(Duration(days: 180)),
-      estimatedYield: 6.8,
-    ),
-  ];
+class _PortfolioManagementState extends State<PortfolioManagement> {
+  final PortfolioService _portfolioService = PortfolioService();
+  final AuthService _authService = AuthService();
+  
+  Map<String, dynamic> _portfolioData = {};
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPortfolioData();
+  }
+
+  Future<void> _loadPortfolioData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final user = _authService.currentUser;
+      if (user != null) {
+        if (user.role == UserRole.farmer) {
+          _portfolioData = await _portfolioService.getFarmerPortfolio(user.id);
+        } else if (user.role == UserRole.investor) {
+          _portfolioData = await _portfolioService.getPortfolioSummary(user.id);
+        }
+      }
+
+      setState(() {
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      NavigationService().showErrorDialog('Erreur lors du chargement du portefeuille: $e');
+    }
+  }
+
+  void _handleProjectTap(String projectId) {
+    NavigationService().toProjectDetails(projectId);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final totalInvestment = investments.fold<double>(0, (sum, item) => sum + item.investedAmount);
-    final totalCurrentValue = investments.fold<double>(0, (sum, item) => sum + item.currentValue);
-    final totalReturn = totalCurrentValue - totalInvestment;
-    final double totalReturnPercentage = totalInvestment > 0 ? (totalReturn / totalInvestment * 100) : 0;
+    final user = _authService.currentUser;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Gestion de Portefeuille',
-          style: GoogleFonts.roboto(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_chart),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.sp),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Carte de résumé du portefeuille
-            _buildPortfolioSummaryCard(totalInvestment, totalCurrentValue, totalReturn, totalReturnPercentage),
-            SizedBox(height: 3.h),
-            
-            // Graphique de répartition
-            _buildAllocationChart(),
-            SizedBox(height: 3.h),
-            
-            // En-tête des investissements
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Mes Investissements',
-                  style: GoogleFonts.roboto(
-                    fontSize: 18.sp,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                Text(
-                  '${investments.length} actifs',
-                  style: GoogleFonts.roboto(
-                    fontSize: 12.sp,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 2.h),
-            
-            // Liste des investissements
-            ...investments.map((investment) => _buildInvestmentCard(investment)),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Naviguer vers l'écran de nouvel investissement
-        },
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
-
-  Widget _buildPortfolioSummaryCard(double totalInvestment, double totalCurrentValue, double totalReturn, double totalReturnPercentage) {
-    final isPositive = totalReturn >= 0;
-    
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: EdgeInsets.all(16.sp),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Valeur du Portefeuille',
-              style: GoogleFonts.roboto(
-                fontSize: 14.sp,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-            SizedBox(height: 1.h),
-            Text(
-              '${totalCurrentValue.toStringAsFixed(0)} FCFA',
-              style: GoogleFonts.roboto(
-                fontSize: 28.sp,
-                fontWeight: FontWeight.w700,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-            ),
-            SizedBox(height: 2.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Investissement Total',
-                      style: GoogleFonts.roboto(
-                        fontSize: 12.sp,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+      backgroundColor: AppConstants.backgroundColor,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : CustomScrollView(
+              slivers: [
+                // Header
+                SliverAppBar(
+                  backgroundColor: Colors.white,
+                  elevation: 0,
+                  title: Text(
+                    user?.role == UserRole.farmer ? 'Mes Projets' : 'Mon Portefeuille',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppConstants.textColor,
                     ),
-                    Text(
-                      '${totalInvestment.toStringAsFixed(0)} FCFA',
-                      style: GoogleFonts.roboto(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  ),
+                  actions: [
+                    IconButton(
+                      onPressed: _loadPortfolioData,
+                      icon: const Icon(Icons.refresh),
+                      color: AppConstants.textColor,
                     ),
                   ],
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Rendement Total',
-                      style: GoogleFonts.roboto(
-                        fontSize: 12.sp,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+
+                // Portfolio Summary
+                SliverToBoxAdapter(
+                  child: _buildPortfolioSummary(),
+                ),
+
+                // Projects List
+                if (_portfolioData['projects'] != null)
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final project = _portfolioData['projects'][index];
+                        return _buildProjectCard(project);
+                      },
+                      childCount: (_portfolioData['projects'] as List).length,
                     ),
-                    Row(
+                  ),
+
+                // Empty State
+                if (_portfolioData['projects'] == null || (_portfolioData['projects'] as List).isEmpty)
+                  SliverFillRemaining(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          isPositive ? Icons.arrow_upward : Icons.arrow_downward,
-                          color: isPositive ? AppTheme.successLight : AppTheme.errorLight,
-                          size: 16.sp,
+                          Icons.business_center_outlined,
+                          size: 80,
+                          color: Colors.grey.shade300,
                         ),
+                        const SizedBox(height: 16),
                         Text(
-                          '${totalReturnPercentage.toStringAsFixed(1)}%',
-                          style: GoogleFonts.roboto(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                            color: isPositive ? AppTheme.successLight : AppTheme.errorLight,
+                          user?.role == UserRole.farmer 
+                              ? 'Aucun projet créé'
+                              : 'Aucun investissement',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppConstants.textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          user?.role == UserRole.farmer
+                              ? 'Commencez par créer votre premier projet agricole'
+                              : 'Découvrez des opportunités d\'investissement',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppConstants.textColor.withOpacity(0.6),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () {
+                            if (user?.role == UserRole.farmer) {
+                              NavigationService().toProjectCreation();
+                            } else {
+                              NavigationService().toMarketplace();
+                            }
+                          },
+                          child: Text(
+                            user?.role == UserRole.farmer 
+                                ? 'Créer un projet' 
+                                : 'Explorer le marché',
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
+                  ),
               ],
             ),
-          ],
-        ),
-      ),
     );
   }
 
-  Widget _buildAllocationChart() {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: EdgeInsets.all(16.sp),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Répartition des Cultures',
-              style: GoogleFonts.roboto(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            SizedBox(height: 2.h),
-            SizedBox(
-              height: 20.h,
-              child: PieChart(
-                PieChartData(
-                  sections: _buildPieChartSections(),
-                  centerSpaceRadius: 40,
-                  sectionsSpace: 2,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  List<PieChartSectionData> _buildPieChartSections() {
-    final total = investments.fold<double>(0, (sum, item) => sum + item.investedAmount);
+  Widget _buildPortfolioSummary() {
+    final user = _authService.currentUser;
     
-    return investments.map((investment) {
-      final percentage = (investment.investedAmount / total * 100);
-      final color = _getColorForCropType(investment.type);
-      
-      return PieChartSectionData(
-        color: color,
-        value: investment.investedAmount.toDouble(), // CORRECTION: Conversion explicite en double
-        title: '${percentage.toStringAsFixed(0)}%',
-        radius: 50,
-        titleStyle: GoogleFonts.roboto(
-          fontSize: 12.sp,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-      );
-    }).toList();
-  }
-
-  Color _getColorForCropType(String type) {
-    switch (type) {
-      case 'Céréales':
-        return AppTheme.primaryLight;
-      case 'Riziculture':
-        return AppTheme.secondaryLight;
-      case 'Plantation':
-        return AppTheme.accentLight;
-      default:
-        return Colors.grey;
+    if (user?.role == UserRole.farmer) {
+      return _buildFarmerSummary();
+    } else {
+      return _buildInvestorSummary();
     }
   }
 
-  Widget _buildInvestmentCard(CropInvestment investment) {
-    final isPositive = investment.returnPercentage >= 0;
-    
-    return Card(
-      margin: EdgeInsets.only(bottom: 2.h),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: EdgeInsets.all(16.sp),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildFarmerSummary() {
+    final totalProjects = _portfolioData['totalProjects'] ?? 0;
+    final completedProjects = _portfolioData['completedProjects'] ?? 0;
+    final activeProjects = _portfolioData['activeProjects'] ?? 0;
+    final totalRaised = _portfolioData['totalRaised'] ?? 0.0;
+    final averageROI = _portfolioData['averageROI'] ?? 0.0;
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Aperçu de mes Projets',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppConstants.textColor,
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 1.4,
+            children: [
+              _buildStatCard('Total', '$totalProjects', 'Projets', Icons.list),
+              _buildStatCard('Actifs', '$activeProjects', 'Projets', Icons.play_arrow),
+              _buildStatCard('Terminés', '$completedProjects', 'Projets', Icons.check_circle),
+              _buildStatCard('ROI Moyen', '${averageROI.toStringAsFixed(1)}%', 'Retour', Icons.trending_up),
+            ],
+          ),
+          
+          const SizedBox(height: 16),
+          
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppConstants.primaryColor.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
               children: [
+                Icon(
+                  Icons.attach_money,
+                  color: AppConstants.primaryColor,
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        investment.name,
-                        style: GoogleFonts.roboto(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
+                        'Total levé',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppConstants.textColor.withOpacity(0.6),
                         ),
                       ),
-                      SizedBox(height: 0.5.h),
                       Text(
-                        investment.type,
-                        style: GoogleFonts.roboto(
-                          fontSize: 12.sp,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        '${totalRaised.toStringAsFixed(0)} FCFA',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppConstants.primaryColor,
                         ),
                       ),
                     ],
                   ),
                 ),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12.sp, vertical: 6.sp),
-                  decoration: BoxDecoration(
-                    color: AppTheme.getStatusColor(investment.status, isLight: true).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    investment.status,
-                    style: GoogleFonts.roboto(
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.w500,
-                      color: AppTheme.getStatusColor(investment.status, isLight: true),
-                    ),
-                  ),
-                ),
               ],
             ),
-            SizedBox(height: 2.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Investi',
-                      style: GoogleFonts.roboto(
-                        fontSize: 12.sp,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    Text(
-                      '${investment.investedAmount.toStringAsFixed(0)} FCFA',
-                      style: GoogleFonts.roboto(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Valeur actuelle',
-                      style: GoogleFonts.roboto(
-                        fontSize: 12.sp,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    Text(
-                      '${investment.currentValue.toStringAsFixed(0)} FCFA',
-                      style: GoogleFonts.roboto(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'Rendement',
-                      style: GoogleFonts.roboto(
-                        fontSize: 12.sp,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Icon(
-                          isPositive ? Icons.arrow_upward : Icons.arrow_downward,
-                          color: isPositive ? AppTheme.successLight : AppTheme.errorLight,
-                          size: 14.sp,
-                        ),
-                        Text(
-                          '${investment.returnPercentage.toStringAsFixed(1)}%',
-                          style: GoogleFonts.roboto(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w600,
-                            color: isPositive ? AppTheme.successLight : AppTheme.errorLight,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInvestorSummary() {
+    final totalInvested = _portfolioData['totalInvested'] ?? 0.0;
+    final currentValue = _portfolioData['currentValue'] ?? 0.0;
+    final totalReturns = _portfolioData['totalReturns'] ?? 0.0;
+    final activeInvestments = _portfolioData['activeInvestments'] ?? 0;
+    final overallROI = _portfolioData['overallROI'] ?? 0.0;
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Résumé du Portefeuille',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppConstants.textColor,
             ),
-            SizedBox(height: 2.h),
-            LinearProgressIndicator(
-              value: investment.currentValue / investment.investedAmount,
-              backgroundColor: Colors.grey[300],
-              valueColor: AlwaysStoppedAnimation<Color>(
-                isPositive ? AppTheme.successLight : AppTheme.errorLight,
-              ),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            SizedBox(height: 1.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Current Value
+          Center(
+            child: Column(
               children: [
                 Text(
-                  'Durée: ${investment.duration}',
-                  style: GoogleFonts.roboto(
-                    fontSize: 11.sp,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  'Valeur actuelle',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: AppConstants.textColor.withOpacity(0.6),
                   ),
                 ),
-                TextButton(
-                  onPressed: () {
-                    NavigationService.navigateToCropDetail(
-                      context: context,
-                      investment: investment, // objet CropInvestment réel
-                    );
-                  },
-                  child: Text(
-                    'Voir détails',
-                    style: GoogleFonts.roboto(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w500,
-                    ),
+                const SizedBox(height: 8),
+                Text(
+                  '${currentValue.toStringAsFixed(0)} FCFA',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: AppConstants.primaryColor,
                   ),
                 ),
               ],
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 1.4,
+            children: [
+              _buildStatCard('Investi', '${totalInvested.toStringAsFixed(0)}', 'FCFA', Icons.account_balance_wallet),
+              _buildStatCard('Retours', '${totalReturns.toStringAsFixed(0)}', 'FCFA', Icons.monetization_on),
+              _buildStatCard('Actifs', '$activeInvestments', 'Invest.', Icons.business_center),
+              _buildStatCard('ROI Total', '${overallROI.toStringAsFixed(1)}', '%', Icons.analytics),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(String title, String value, String unit, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppConstants.primaryColor.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppConstants.primaryColor.withOpacity(0.1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Icon(
+            icon,
+            color: AppConstants.primaryColor,
+            size: 20,
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppConstants.textColor,
+                ),
+              ),
+              Text(
+                '$title • $unit',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppConstants.textColor.withOpacity(0.6),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProjectCard(dynamic project) {
+    final cropProject = project as CropProject;
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: AppConstants.primaryColor.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            Icons.eco,
+            color: AppConstants.primaryColor,
+            size: 24,
+          ),
+        ),
+        title: Text(
+          cropProject.title,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppConstants.textColor,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(
+              '${cropProject.progressPercentage.toStringAsFixed(0)}% financé • ${cropProject.currentInvestment.toStringAsFixed(0)} FCFA',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppConstants.textColor.withOpacity(0.6),
+              ),
+            ),
+            const SizedBox(height: 8),
+            LinearProgressIndicator(
+              value: cropProject.progressPercentage / 100,
+              backgroundColor: Colors.grey.shade200,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                cropProject.progressPercentage >= 100 
+                    ? AppConstants.successColor 
+                    : AppConstants.primaryColor,
+              ),
             ),
           ],
         ),
+        trailing: Icon(
+          Icons.arrow_forward_ios,
+          size: 16,
+          color: AppConstants.textColor.withOpacity(0.5),
+        ),
+        onTap: () => _handleProjectTap(cropProject.id),
       ),
     );
   }

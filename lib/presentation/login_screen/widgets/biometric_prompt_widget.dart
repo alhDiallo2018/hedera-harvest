@@ -1,149 +1,75 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:sizer/sizer.dart';
+import 'package:agridash/core/app_export.dart';
 
-import '../../../core/app_export.dart';
-import '../../../theme/app_theme.dart';
+class BiometricPromptWidget extends StatefulWidget {
+  const BiometricPromptWidget({super.key});
 
-/// Biometric authentication prompt widget
-class BiometricPromptWidget extends StatelessWidget {
-  final VoidCallback onBiometricLogin;
-  final VoidCallback onSkip;
+  @override
+  State<BiometricPromptWidget> createState() => _BiometricPromptWidgetState();
+}
 
-  const BiometricPromptWidget({
-    super.key,
-    required this.onBiometricLogin,
-    required this.onSkip,
-  });
+class _BiometricPromptWidgetState extends State<BiometricPromptWidget> {
+  bool _isBiometricAvailable = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBiometricAvailability();
+  }
+
+  Future<void> _checkBiometricAvailability() async {
+    // Simulate biometric check
+    await Future.delayed(const Duration(seconds: 1));
+    setState(() {
+      _isBiometricAvailable = true;
+    });
+  }
+
+  void _handleBiometricAuth() {
+    NavigationService().showSuccessDialog('Authentification biométrique simulée avec succès !');
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(6.w),
-      decoration: BoxDecoration(
-        color: AppTheme.lightTheme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1), // Correction: withOpacity au lieu de withValues
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle bar
-          Container(
-            width: 12.w,
-            height: 0.5.h,
+    if (!_isBiometricAvailable) {
+      return const SizedBox();
+    }
+
+    return Column(
+      children: [
+        const SizedBox(height: 20),
+        
+        GestureDetector(
+          onTap: _handleBiometricAuth,
+          child: Container(
+            width: 60,
+            height: 60,
             decoration: BoxDecoration(
-              color: AppTheme.lightTheme.colorScheme.onSurface
-                  .withOpacity(0.3), // Correction: withOpacity
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-
-          SizedBox(height: 3.h),
-
-          // Biometric Icon
-          Container(
-            width: 16.w,
-            height: 16.w,
-            decoration: BoxDecoration(
-              color: AppTheme.lightTheme.colorScheme.primary
-                  .withOpacity(0.1), // Correction: withOpacity
-              borderRadius: BorderRadius.circular(50),
-            ),
-            child: Center(
-              child: Icon( // Remplacement de CustomIconWidget par Icon standard
-                Icons.fingerprint,
-                color: AppTheme.lightTheme.colorScheme.primary,
-                size: 8.w,
+              color: AppConstants.primaryColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: AppConstants.primaryColor.withOpacity(0.3),
+                width: 2,
               ),
             ),
-          ),
-
-          SizedBox(height: 3.h),
-
-          // Title
-          Text(
-            'Authentification biométrique',
-            style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
+            child: Icon(
+              Icons.fingerprint,
+              size: 30,
+              color: AppConstants.primaryColor,
             ),
-            textAlign: TextAlign.center,
           ),
-
-          SizedBox(height: 2.h),
-
-          // Description
-          Text(
-            'Activez l\'authentification biométrique pour un accès rapide et sécurisé à votre compte AgriDash.',
-            style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-              color: AppTheme.lightTheme.colorScheme.onSurface
-                  .withOpacity(0.7), // Correction: withOpacity
-            ),
-            textAlign: TextAlign.center,
+        ),
+        
+        const SizedBox(height: 8),
+        
+        Text(
+          'Utiliser l\'empreinte',
+          style: TextStyle(
+            fontSize: 14,
+            color: AppConstants.primaryColor,
+            fontWeight: FontWeight.w500,
           ),
-
-          SizedBox(height: 4.h),
-
-          // Action Buttons
-          Row(
-            children: [
-              // Skip Button
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    onSkip();
-                  },
-                  style: OutlinedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 2.h),
-                    side: BorderSide(
-                      color: AppTheme.lightTheme.colorScheme.primary,
-                    ),
-                  ),
-                  child: Text(
-                    'Plus tard',
-                    style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                      color: AppTheme.lightTheme.colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-
-              SizedBox(width: 4.w),
-
-              // Enable Button
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    HapticFeedback.lightImpact();
-                    onBiometricLogin();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 2.h),
-                    backgroundColor: AppTheme.lightTheme.colorScheme.primary,
-                  ),
-                  child: Text(
-                    'Activer',
-                    style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                      color: AppTheme.lightTheme.colorScheme.onPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          SizedBox(height: 2.h),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

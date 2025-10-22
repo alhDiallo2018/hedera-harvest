@@ -1,293 +1,231 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:sizer/sizer.dart';
-
-import '../../../core/app_export.dart';
+import 'package:agridash/core/app_export.dart';
 
 class SuccessModal extends StatelessWidget {
-  final String projectName;
-  final VoidCallback onViewProject;
-  final VoidCallback onCreateAnother;
-  final String? tokenId;
+  final CropProject project;
+  final String tokenId;
+  final VoidCallback onContinue;
 
   const SuccessModal({
     super.key,
-    required this.projectName,
-    required this.onViewProject,
-    required this.onCreateAnother,
-    this.tokenId,
+    required this.project,
+    required this.tokenId,
+    required this.onContinue,
   });
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+      ),
       child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 4.w),
-        padding: EdgeInsets.all(6.w),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2), // Corrigé: withOpacity
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(24),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Success animation container
+            // Success Icon
             Container(
-              width: 20.w,
-              height: 20.w,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
-                color: AppTheme.lightTheme.colorScheme.primary
-                    .withOpacity(0.1), // Corrigé: withOpacity
+                color: AppConstants.successColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Center(
-                child: Container(
-                  width: 15.w,
-                  height: 15.w,
-                  decoration: BoxDecoration(
-                    color: AppTheme.lightTheme.colorScheme.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon( // Remplacement de CustomIconWidget
-                    Icons.check,
-                    color: Colors.white,
-                    size: 32,
-                  ),
-                ),
+              child: Icon(
+                Icons.check_circle,
+                size: 40,
+                color: AppConstants.successColor,
               ),
             ),
-
-            SizedBox(height: 3.h),
-
-            // Success title
+            
+            const SizedBox(height: 24),
+            
+            // Title
             Text(
-              'Projet Créé avec Succès!',
-              style: AppTheme.lightTheme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppTheme.lightTheme.colorScheme.primary,
-              ),
-            ),
-
-            SizedBox(height: 2.h),
-
-            // Project name
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(4.w),
-              decoration: BoxDecoration(
-                color: AppTheme.lightTheme.colorScheme.primary
-                    .withOpacity(0.1), // Corrigé: withOpacity
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppTheme.lightTheme.colorScheme.primary
-                      .withOpacity(0.3), // Corrigé: withOpacity
-                ),
-              ),
-              child: Column(
-                children: [
-                  Icon( // Remplacement de CustomIconWidget
-                    Icons.agriculture,
-                    color: AppTheme.lightTheme.colorScheme.primary,
-                    size: 24,
-                  ),
-                  SizedBox(height: 1.h),
-                  Text(
-                    projectName,
-                    style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.lightTheme.colorScheme.primary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(height: 2.h),
-
-            // Informations Hedera si tokenId est présent
-            if (tokenId != null) ...[
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(4.w),
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.green.withOpacity(0.3),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.token,
-                          color: Colors.green,
-                          size: 20,
-                        ),
-                        SizedBox(width: 2.w),
-                        Text(
-                          'Tokenisé sur Hedera',
-                          style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.green,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 1.h),
-                    Text(
-                      'Token ID:',
-                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SizedBox(height: 0.5.h),
-                    Container(
-                      padding: EdgeInsets.all(3.w),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: SelectableText(
-                        tokenId!,
-                        style: TextStyle(
-                          fontFamily: 'Monospace',
-                          fontSize: 10.sp,
-                          color: Colors.green,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 1.h),
-                    Text(
-                      'Votre récolte a été tokenisée sur la blockchain Hedera et est prête pour le financement.',
-                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                        color: Colors.green.withOpacity(0.8),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 2.h),
-            ],
-
-            // Success message
-            Text(
-              tokenId != null 
-                ? 'Votre projet agricole a été créé et tokenisé avec succès. Les investisseurs peuvent désormais découvrir et financer votre initiative via la blockchain Hedera.'
-                : 'Votre projet agricole a été créé et est maintenant visible sur la marketplace. Les investisseurs peuvent désormais découvrir et financer votre initiative.',
-              style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                color: AppTheme.lightTheme.colorScheme.onSurface
-                    .withOpacity(0.8), // Corrigé: withOpacity
-                height: 1.4,
+              'Projet créé avec succès !',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppConstants.textColor,
               ),
               textAlign: TextAlign.center,
             ),
-
-            SizedBox(height: 4.h),
-
-            // Action buttons
-            Column(
-              children: [
-                // View Project button
-                SizedBox(
-                  width: double.infinity,
-                  height: 6.h,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      HapticFeedback.mediumImpact();
-                      Navigator.of(context).pop();
-                      onViewProject();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.lightTheme.colorScheme.primary,
-                      foregroundColor: Colors.white,
-                      elevation: 4,
-                      shadowColor: AppTheme.lightTheme.colorScheme.primary
-                          .withOpacity(0.3), // Corrigé: withOpacity
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon( // Remplacement de CustomIconWidget
-                          Icons.visibility,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        SizedBox(width: 2.w),
-                        Text(
-                          'Voir le Projet',
-                          style: AppTheme.lightTheme.textTheme.titleMedium
-                              ?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
+            
+            const SizedBox(height: 16),
+            
+            // Message
+            Text(
+              'Votre projet "${project.title}" a été créé et est maintenant visible sur la marketplace.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: AppConstants.textColor.withOpacity(0.7),
+                height: 1.5,
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Project Details
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  _buildDetailRow('Token ID', tokenId),
+                  _buildDetailRow('Investissement nécessaire', '${project.totalInvestmentNeeded.toStringAsFixed(0)} FCFA'),
+                  _buildDetailRow('Tokens créés', '${project.totalTokens} tokens'),
+                  _buildDetailRow('Prix du token', '${project.tokenPrice} FCFA'),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Next Steps
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppConstants.primaryColor.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Prochaines étapes :',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppConstants.primaryColor,
                     ),
                   ),
-                ),
-
-                SizedBox(height: 2.h),
-
-                // Create Another button
-                SizedBox(
-                  width: double.infinity,
-                  height: 6.h,
+                  const SizedBox(height: 8),
+                  _buildNextStep('Partagez votre projet sur les réseaux sociaux'),
+                  _buildNextStep('Suivez les investissements en temps réel'),
+                  _buildNextStep('Ajoutez des mises à jour régulières'),
+                  _buildNextStep('Préparez-vous pour la récolte'),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Actions
+            Row(
+              children: [
+                Expanded(
                   child: OutlinedButton(
                     onPressed: () {
-                      HapticFeedback.lightImpact();
-                      Navigator.of(context).pop();
-                      onCreateAnother();
+                      NavigationService().toProjectDetails(project.id);
+                      onContinue();
                     },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.lightTheme.colorScheme.primary,
-                      side: BorderSide(
-                        color: AppTheme.lightTheme.colorScheme.primary,
-                        width: 2,
-                      ),
+                      foregroundColor: AppConstants.primaryColor,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      side: BorderSide(color: AppConstants.primaryColor),
+                    ),
+                    child: const Text('Voir le projet'),
+                  ),
+                ),
+                
+                const SizedBox(width: 12),
+                
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      NavigationService().toMarketplace();
+                      onContinue();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppConstants.primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon( // Remplacement de CustomIconWidget
-                          Icons.add,
-                          color: AppTheme.lightTheme.colorScheme.primary,
-                          size: 20,
-                        ),
-                        SizedBox(width: 2.w),
-                        Text(
-                          'Créer un Autre',
-                          style: AppTheme.lightTheme.textTheme.titleMedium
-                              ?.copyWith(
-                            color: AppTheme.lightTheme.colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: const Text('Marketplace'),
                   ),
                 ),
               ],
             ),
+            
+            const SizedBox(height: 8),
+            
+            TextButton(
+              onPressed: onContinue,
+              child: Text(
+                'Retour au tableau de bord',
+                style: TextStyle(
+                  color: AppConstants.textColor.withOpacity(0.6),
+                ),
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppConstants.textColor.withOpacity(0.7),
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppConstants.textColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNextStep(String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.check_circle_outline,
+            size: 16,
+            color: AppConstants.primaryColor,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 12,
+                color: AppConstants.textColor.withOpacity(0.7),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
