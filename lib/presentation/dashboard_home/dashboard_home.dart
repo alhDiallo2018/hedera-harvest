@@ -112,10 +112,10 @@ class _DashboardHomeState extends State<DashboardHome> {
                 // Project Summary (for farmers and admins)
                 if (user.role == UserRole.farmer || user.role == UserRole.admin)
                   SliverToBoxAdapter(
-                    child: ProjectSummaryCardWidget(
-                      portfolioSummary: _portfolioSummary,
-                      userRole: user.role,
-                    ),
+                    // child: ProjectSummaryCard(
+                    //   portfolioSummary: _portfolioSummary,
+                    //   userRole: user.role,
+                    // ),
                   ),
 
                 // Investment Summary (for investors)

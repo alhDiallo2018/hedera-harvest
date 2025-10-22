@@ -181,51 +181,52 @@ class _ProjectHeaderDelegate extends SliverPersistentHeaderDelegate {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Project Summary - Utiliser ConstrainedBox pour limiter la hauteur
-          ConstrainedBox(
-            constraints: const BoxConstraints(
-              minHeight: 120,
-              maxHeight: 140,
-            ),
+          // Project Summary - HAUTEUR PLUS RAISONNABLE
+          SizedBox(
+            height: 120, // Augmenté à 100px pour plus d'espace
             child: ProjectSummaryCard(project: project),
           ),
           
           // Investment CTA
           if (project.canInvest)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              height: 32,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               color: AppConstants.primaryColor.withOpacity(0.05),
               child: Row(
                 children: [
                   Icon(
                     Icons.rocket_launch,
                     color: AppConstants.primaryColor,
-                    size: 20,
+                    size: 16,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'Opportunité d\'investissement disponible',
+                      'Investissement disponible',
                       style: TextStyle(
                         color: AppConstants.primaryColor,
                         fontWeight: FontWeight.w500,
-                        fontSize: 14,
+                        fontSize: 12,
                       ),
                     ),
                   ),
-                  ElevatedButton(
-                    onPressed: onInvest,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppConstants.primaryColor,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                  SizedBox(
+                    height: 24,
+                    child: ElevatedButton(
+                      onPressed: onInvest,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppConstants.primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    ),
-                    child: const Text(
-                      'Investir',
-                      style: TextStyle(fontSize: 14),
+                      child: const Text(
+                        'Investir',
+                        style: TextStyle(fontSize: 10),
+                      ),
                     ),
                   ),
                 ],
@@ -234,6 +235,7 @@ class _ProjectHeaderDelegate extends SliverPersistentHeaderDelegate {
           
           // Tabs
           Container(
+            height: 48,
             color: Colors.white,
             child: TabBar(
               controller: tabController,
@@ -255,19 +257,15 @@ class _ProjectHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   double get maxExtent {
     if (project.canInvest) {
-      return 200; // Hauteur totale quand le CTA d'investissement est visible
+      return 120 + 32 + 48; // summary (100) + CTA (32) + tabs (48)
     } else {
-      return 180; // Hauteur réduite quand pas d'investissement
+      return 120 + 48; // summary (100) + tabs (48)
     }
   }
 
   @override
   double get minExtent {
-    if (project.canInvest) {
-      return 200;
-    } else {
-      return 180;
-    }
+    return maxExtent;
   }
 
   @override

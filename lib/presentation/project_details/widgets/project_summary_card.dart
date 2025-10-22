@@ -3,10 +3,7 @@ import 'package:agridash/core/app_export.dart';
 class ProjectSummaryCard extends StatelessWidget {
   final CropProject project;
 
-  const ProjectSummaryCard({
-    super.key,
-    required this.project,
-  });
+  const ProjectSummaryCard({super.key, required this.project});
 
   String _getCropEmoji(CropType cropType) {
     switch (cropType) {
@@ -31,139 +28,6 @@ class ProjectSummaryCard extends StatelessWidget {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      color: Colors.white,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Title and Status - Version compacte
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppConstants.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: Text(
-                    _getCropEmoji(project.cropType),
-                    style: const TextStyle(fontSize: 20),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      project.title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppConstants.textColor,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      project.farmerName,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppConstants.textColor.withOpacity(0.6),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _getStatusColor(project.status).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: _getStatusColor(project.status).withOpacity(0.3),
-                  ),
-                ),
-                child: Text(
-                  project.statusDisplay,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                    color: _getStatusColor(project.status),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 12),
-          
-          // Progress Bar - Version compacte
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '${project.progressPercentage.toStringAsFixed(0)}% financé',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppConstants.textColor,
-                    ),
-                  ),
-                  Text(
-                    '${project.currentInvestment.toStringAsFixed(0)} / ${project.totalInvestmentNeeded.toStringAsFixed(0)} FCFA',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppConstants.textColor.withOpacity(0.6),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              LinearProgressIndicator(
-                value: project.progressPercentage / 100,
-                backgroundColor: Colors.grey.shade200,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  project.progressPercentage >= 100 
-                      ? AppConstants.successColor 
-                      : AppConstants.primaryColor,
-                ),
-                borderRadius: BorderRadius.circular(4),
-                minHeight: 6,
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 12),
-          
-          // Key Metrics - Version compacte
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildMetric('ROI', '${project.estimatedROI.toStringAsFixed(0)}%', Icons.trending_up),
-              _buildMetric('Jours', '${project.daysToHarvest}', Icons.calendar_today),
-              _buildMetric('Rendement', '${project.estimatedYield}', Icons.agriculture),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Color _getStatusColor(ProjectStatus status) {
     switch (status) {
       case ProjectStatus.funding:
@@ -181,32 +45,174 @@ class ProjectSummaryCard extends StatelessWidget {
     }
   }
 
-  Widget _buildMetric(String label, String value, IconData icon) {
-    return Column(
+  @override
+  Widget build(BuildContext context) {
+  return Container(
+    padding: const EdgeInsets.all(10), // Padding réduit
+    color: Colors.white,
+    height: 120,
+    child: Column(
+      children: [
+        // Ligne 1: Titre et Status (45px de hauteur fixe)
+        SizedBox(
+          height: 45,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Emoji
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: AppConstants.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Center(
+                  child: Text(
+                    _getCropEmoji(project.cropType),
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              // Titre et nom
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      project.title,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppConstants.textColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      project.farmerName,
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: AppConstants.textColor.withOpacity(0.6),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              // Status
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: _getStatusColor(project.status).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(3),
+                  border: Border.all(
+                    color: _getStatusColor(project.status).withOpacity(0.3),
+                  ),
+                ),
+                child: Text(
+                  project.statusDisplay,
+                  style: TextStyle(
+                    fontSize: 7,
+                    fontWeight: FontWeight.w500,
+                    color: _getStatusColor(project.status),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        // Ligne 2: Barre de progression (30px de hauteur fixe)
+        SizedBox(
+          height: 30,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${project.progressPercentage.toStringAsFixed(0)}% financé',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: AppConstants.textColor,
+                    ),
+                  ),
+                  Text(
+                    '${project.currentInvestment.toStringAsFixed(0)}/${project.totalInvestmentNeeded.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: AppConstants.textColor.withOpacity(0.6),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              LinearProgressIndicator(
+                value: project.progressPercentage / 100,
+                backgroundColor: Colors.grey.shade200,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  project.progressPercentage >= 100 
+                      ? AppConstants.successColor 
+                      : AppConstants.primaryColor,
+                ),
+                borderRadius: BorderRadius.circular(1),
+                minHeight: 2,
+              ),
+            ],
+          ),
+        ),
+        
+        // Ligne 3: Métriques (25px de hauteur fixe) - VERSION ULTRA COMPACTE
+        SizedBox(
+          height: 25,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              _buildUltraCompactMetric('ROI', '${project.estimatedROI.toStringAsFixed(0)}%'),
+              _buildUltraCompactMetric('Jours', '${project.daysToHarvest}'),
+              _buildUltraCompactMetric('Rend.', '${project.estimatedYield.toInt()}'),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildUltraCompactMetric(String label, String value) {
+  return SizedBox(
+    width: 60, // Largeur fixe pour éviter les débordements
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: AppConstants.primaryColor,
-        ),
-        const SizedBox(height: 2),
         Text(
           value,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 10, // Très petit
             fontWeight: FontWeight.bold,
             color: AppConstants.textColor,
+            height: 1.9, // Réduit l'espace entre les lignes
           ),
         ),
         Text(
           label,
           style: TextStyle(
-            fontSize: 10,
+            fontSize: 8, // Très petit
             color: AppConstants.textColor.withOpacity(0.6),
+            height: 0.8, // Réduit l'espace entre les lignes
           ),
         ),
       ],
-    );
-  }
+    ),
+  );
+}
 }
