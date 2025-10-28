@@ -1,7 +1,7 @@
 import 'package:agridash/core/app_export.dart';
 
 class DashboardHeaderWidget extends StatelessWidget {
-  final UserModel user;
+  final User user;
   final VoidCallback onProfileTap;
   final VoidCallback onNotificationTap;
 

@@ -26,13 +26,26 @@ class NavigationService {
     );
   }
 
-  Future<dynamic> navigateAndRemoveUntil(String routeName, {Object? arguments}) {
+  Future<dynamic> navigateAndRemoveUntil(
+    String routeName, {
+    Object? arguments,
+  }) {
     return navigatorKey.currentState!.pushNamedAndRemoveUntil(
       routeName,
       (route) => false,
       arguments: arguments,
     );
   }
+
+  void toRegister() {
+    navigateAndRemoveUntil(AppRoutes.registerScreen);
+  }
+
+  // void toLogin() {
+  //   navigatorKey.currentState?.pushReplacement(
+  //     MaterialPageRoute(builder: (context) => const LoginScreen()),
+  //   );
+  // }
 
   void goBack([dynamic result]) {
     if (navigatorKey.currentState!.canPop()) {
@@ -90,12 +103,7 @@ class NavigationService {
       builder: (context) => AlertDialog(
         title: Text('Erreur'),
         content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => goBack(),
-            child: Text('OK'),
-          ),
-        ],
+        actions: [TextButton(onPressed: () => goBack(), child: Text('OK'))],
       ),
     );
   }
@@ -106,12 +114,7 @@ class NavigationService {
       builder: (context) => AlertDialog(
         title: Text('Succès'),
         content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => goBack(),
-            child: Text('OK'),
-          ),
-        ],
+        actions: [TextButton(onPressed: () => goBack(), child: Text('OK'))],
       ),
     );
   }
@@ -128,10 +131,7 @@ class NavigationService {
         title: Text(title),
         content: Text(message),
         actions: [
-          TextButton(
-            onPressed: () => goBack(false),
-            child: Text(cancelText),
-          ),
+          TextButton(onPressed: () => goBack(false), child: Text(cancelText)),
           ElevatedButton(
             onPressed: () => goBack(true),
             child: Text(confirmText),

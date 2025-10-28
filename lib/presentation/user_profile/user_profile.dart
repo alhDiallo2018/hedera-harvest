@@ -11,7 +11,7 @@ class _UserProfileState extends State<UserProfile> {
   final AuthService _authService = AuthService();
   final PortfolioService _portfolioService = PortfolioService();
   
-  UserModel? _user;
+  User? _user;
   Map<String, dynamic> _portfolioData = {};
   bool _isLoading = true;
 

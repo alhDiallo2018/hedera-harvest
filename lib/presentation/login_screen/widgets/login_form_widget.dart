@@ -11,7 +11,8 @@ class LoginFormWidget extends StatelessWidget {
     required this.emailController,
     required this.passwordController,
     required this.obscurePassword,
-    required this.onTogglePassword, required Null Function(String email, String password) onLogin,
+    required this.onTogglePassword,
+    required Null Function(String email, String password) onLogin,
   });
 
   @override
@@ -37,9 +38,9 @@ class LoginFormWidget extends StatelessWidget {
             return null;
           },
         ),
-        
+
         const SizedBox(height: 16),
-        
+
         // Password Field
         TextFormField(
           controller: passwordController,
@@ -51,7 +52,9 @@ class LoginFormWidget extends StatelessWidget {
             suffixIcon: IconButton(
               onPressed: onTogglePassword,
               icon: Icon(
-                obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                obscurePassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
                 color: Colors.grey.shade600,
               ),
             ),
@@ -66,9 +69,9 @@ class LoginFormWidget extends StatelessWidget {
             return null;
           },
         ),
-        
+
         const SizedBox(height: 8),
-        
+
         // Demo Credentials Hint
         Container(
           width: double.infinity,
@@ -76,7 +79,9 @@ class LoginFormWidget extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppConstants.primaryColor.withOpacity(0.05),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: AppConstants.primaryColor.withOpacity(0.1)),
+            border: Border.all(
+              color: AppConstants.primaryColor.withOpacity(0.1),
+            ),
           ),
           child: Row(
             children: [
@@ -88,10 +93,11 @@ class LoginFormWidget extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Utilisez "password123" comme mot de passe pour tous les comptes de démonstration',
+                  'Utilisez le mot de passe correspondant au rôle (ex. : farmer123, admin123, investor123) pour accéder aux comptes de démonstration.',
                   style: TextStyle(
                     fontSize: 12,
                     color: AppConstants.textColor.withOpacity(0.7),
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
               ),

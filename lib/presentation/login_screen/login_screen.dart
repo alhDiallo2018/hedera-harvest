@@ -1,4 +1,5 @@
 import 'package:agridash/core/app_export.dart';
+import 'package:agridash/presentation/register_screen/register_screen.dart';
 
 import 'widgets/index.dart';
 
@@ -20,12 +21,11 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
 
   @override
-  void initState() {
-    super.initState();
-    // Demo credentials for testing
-    _emailController.text = 'farmer@agrosense.com';
-    _passwordController.text = 'password123';
-  }
+void initState() {
+  super.initState();
+  // 🧪 Identifiants de démonstration (à des fins de test uniquement)
+  _applyDemoCredentials(UserRole.farmer);
+}
 
   @override
   void dispose() {
@@ -34,6 +34,33 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+/// Applique les identifiants de démonstration en fonction du rôle
+void _applyDemoCredentials(UserRole role) {
+  switch (role) {
+    case UserRole.farmer:
+      _emailController.text = 'jean.dupont@agridash.com';
+      _passwordController.text = 'farmer123';
+      break;
+    case UserRole.investor:
+      _emailController.text = 'sophie.martin@agridash.com';
+      _passwordController.text = 'investor123';
+      break;
+    case UserRole.admin:
+      _emailController.text = 'admin@agridash.com';
+      _passwordController.text = 'admin123';
+      break;
+  }
+}
+
+/// Gère le changement de rôle
+void _handleRoleChange(UserRole? role) {
+  if (role != null) {
+    setState(() {
+      _selectedRole = role;
+      _applyDemoCredentials(role);
+    });
+  }
+}
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -52,12 +79,12 @@ class _LoginScreenState extends State<LoginScreen> {
         _isLoading = false;
       });
 
-      if (result['success'] == true) {
+      if (result.success) {
         NavigationService().showSuccessDialog('Connexion réussie !');
         await Future.delayed(const Duration(milliseconds: 1500));
         NavigationService().toDashboard();
       } else {
-        NavigationService().showErrorDialog(result['error'] ?? 'Erreur de connexion');
+        NavigationService().showErrorDialog(result.error ?? 'Erreur de connexion');
       }
     } catch (e) {
       setState(() {
@@ -67,43 +94,34 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _handleRoleChange(UserRole? role) {
-    if (role != null) {
-      setState(() {
-        _selectedRole = role;
-      });
+  // void _handleRoleChange(UserRole? role) {
+  //   if (role != null) {
+  //     setState(() {
+  //       _selectedRole = role;
+  //     });
       
-      // Update demo credentials based on role
-      switch (role) {
-        case UserRole.farmer:
-          _emailController.text = 'farmer@agrosense.com';
-          break;
-        case UserRole.investor:
-          _emailController.text = 'investor@agrosense.com';
-          break;
-        case UserRole.admin:
-          _emailController.text = 'admin@agrosense.com';
-          break;
-      }
-    }
-  }
+  //     // Update demo credentials based on role
+  //     switch (role) {
+  //       case UserRole.farmer:
+  //         _emailController.text = 'jean.dupont@agridash.com';
+  //         break;
+  //       case UserRole.investor:
+  //         _emailController.text = 'sophie.martin@agridash.com';
+  //         break;
+  //       case UserRole.admin:
+  //         _emailController.text = 'admin@agridash.com';
+  //         break;
+  //     }
+  //   }
+  // }
 
   void _navigateToRegister() {
-    // For demo, we'll show a dialog instead of navigation
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Inscription'),
-        content: const Text('Fonctionnalité d\'inscription en cours de développement. Utilisez les comptes de démonstration pour tester l\'application.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const RegisterScreen()),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {

@@ -1,9 +1,9 @@
 import 'dart:convert';
 
+import 'package:agridash/core/models/auth_result.dart';
+import 'package:agridash/core/models/user.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../models/user_model.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -17,10 +17,10 @@ class AuthService {
   static const String _tokenKey = 'auth_token';
   static const String _usersKey = 'registered_users';
 
-  UserModel? _currentUser;
+  User? _currentUser;
   String? _authToken;
 
-  UserModel? get currentUser => _currentUser;
+  User? get currentUser => _currentUser;
   bool get isLoggedIn => _currentUser != null;
   String? get token => _authToken;
 
@@ -31,7 +31,7 @@ class AuthService {
 
     if (userJson != null && _authToken != null) {
       try {
-        _currentUser = UserModel.fromJson(json.decode(userJson));
+        _currentUser = User.fromJson(json.decode(userJson));
         print('✅ Utilisateur restauré: ${_currentUser?.name}');
         print('✅ Token restauré: ${_authToken?.substring(0, 20)}...');
       } catch (e) {
@@ -41,8 +41,56 @@ class AuthService {
     }
   }
 
-  // VRAI LOGIN AVEC BACKEND
-  Future<Map<String, dynamic>> login({
+  Future<AuthResult> register({
+    required String name,
+    required String email,
+    required String password,
+    required UserRole role,
+    String? phone,
+    String? location,
+  }) async {
+    try {
+      print('📝 Tentative d\'inscription: $email');
+
+      final response = await http.post(
+        Uri.parse('$_backendBaseUrl/auth/register'),
+        headers: {
+          'x-api-key': _apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'name': name,
+          'email': email,
+          'password': password,
+          'role': role.name,
+          'phone': phone,
+          'location': location,
+        }),
+      ).timeout(const Duration(seconds: 50));
+
+      print('📡 Réponse register: ${response.statusCode}');
+      print('Body: ${response.body}');
+
+      final data = json.decode(response.body);
+      
+      if (data['success'] == true) {
+        final user = User.fromJson(data['user']);
+        final token = data['token'];
+        
+        // Sauvegarder le token et l'utilisateur
+        await _saveAuthData(token, user);
+        
+        return AuthResult(success: true, user: user, token: token);
+      } else {
+        return AuthResult(success: false, error: data['error']);
+      }
+    } catch (e) {
+      print('❌ Erreur register: $e');
+      return AuthResult(success: false, error: 'Erreur de connexion: $e');
+    }
+  }
+
+  Future<AuthResult> login({
     required String email,
     required String password,
     required UserRole role,
@@ -61,7 +109,7 @@ class AuthService {
           'password': password,
           'role': role.name,
         }),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 40));
 
       print('📡 Réponse login: ${response.statusCode}');
       print('Body: ${response.body}');
@@ -70,7 +118,6 @@ class AuthService {
         final data = json.decode(response.body);
         
         if (data['success'] == true) {
-          // ✅ CORRECTION : Extraire correctement le token JWT
           final userData = data['user'];
           final token = data['token'];
           
@@ -78,89 +125,26 @@ class AuthService {
             throw Exception('Données utilisateur ou token manquantes');
           }
 
-          // Créer l'utilisateur avec les données du backend
-          final user = UserModel.fromJson(userData);
-          
-          _currentUser = user;
-          _authToken = token;
-
-          // ✅ CORRECTION : Sauvegarder avec le token
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString(_userKey, json.encode(user.toJson()));
-          await prefs.setString(_tokenKey, _authToken!);
+          final user = User.fromJson(userData);
+          await _saveAuthData(token, user);
 
           print('✅ Connexion réussie: ${user.name}');
           print('✅ Token JWT reçu: ${token.substring(0, 20)}...');
 
-          return {
-            'success': true,
-            'user': user,
-            'token': token,
-          };
+          return AuthResult(success: true, user: user, token: token);
         } else {
-          throw Exception(data['error'] ?? 'Erreur de connexion');
+          return AuthResult(success: false, error: data['error'] ?? 'Erreur de connexion');
         }
       } else {
         final errorData = json.decode(response.body);
-        throw Exception(errorData['error'] ?? 'Erreur serveur: ${response.statusCode}');
+        return AuthResult(
+          success: false, 
+          error: errorData['error'] ?? 'Erreur serveur: ${response.statusCode}'
+        );
       }
     } catch (e) {
       print('❌ Erreur login: $e');
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
-    }
-  }
-
-
-  // VRAI REGISTER AVEC BACKEND
-  Future<Map<String, dynamic>> register({
-    required String email,
-    required String password,
-    required String name,
-    required UserRole role,
-    String? phone,
-    String? location,
-  }) async {
-    try {
-      print('📝 Tentative d\'inscription: $email');
-
-      final response = await http.post(
-        Uri.parse('$_backendBaseUrl/auth/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'email': email,
-          'password': password,
-          'name': name,
-          'role': role.name,
-          'phone': phone,
-          'location': location,
-        }),
-      ).timeout(const Duration(seconds: 10));
-
-      print('📡 Réponse register: ${response.statusCode}');
-      print('Body: ${response.body}');
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final data = json.decode(response.body);
-        
-        if (data['success'] == true) {
-          // Auto-login après inscription
-          return await login(email: email, password: password, role: role);
-        } else {
-          throw Exception(data['error'] ?? 'Erreur d\'inscription');
-        }
-      } else {
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['error'] ?? 'Erreur serveur');
-      }
-    } catch (e) {
-      print('❌ Erreur register: $e');
-      return {
-        'success': false,
-        'error': e.toString(),
-      };
+      return AuthResult(success: false, error: e.toString());
     }
   }
 
@@ -173,6 +157,16 @@ class AuthService {
     _authToken = null;
     
     print('✅ Déconnexion réussie');
+  }
+
+  // Méthode pour sauvegarder les données d'authentification
+  Future<void> _saveAuthData(String token, User user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userKey, json.encode(user.toJson()));
+    await prefs.setString(_tokenKey, token);
+    
+    _currentUser = user;
+    _authToken = token;
   }
 
   // Méthode pour les requêtes authentifiées
@@ -188,22 +182,36 @@ class AuthService {
     
     return headers;
   }
-  // Demo data initialization
+
+  // Vérifier si l'utilisateur a un rôle spécifique
+  bool hasRole(UserRole role) {
+    return _currentUser?.role == role;
+  }
+
+  // Vérifier si l'utilisateur peut créer des projets
+  bool get canCreateProjects => hasRole(UserRole.farmer) || hasRole(UserRole.admin);
+
+  // Vérifier si l'utilisateur peut investir
+  bool get canInvest => hasRole(UserRole.investor) || hasRole(UserRole.admin);
+
+  // Demo data initialization (optionnel)
   Future<void> initializeDemoData() async {
     final prefs = await SharedPreferences.getInstance();
     
     if (prefs.getString(_usersKey) == null) {
       final demoUsers = [
-        UserModel(
+        User(
           id: 'admin_001',
           email: 'admin@agrosense.com',
           name: 'Admin AgroSense',
           role: UserRole.admin,
           balance: 0.0,
           joinedDate: DateTime.now(),
-          profileData: {'systemAccess': true},
+          profileData: {'systemAccess': true}, 
+          createdAt: DateTime.now(), 
+          updatedAt: DateTime.now(),
         ).toJson(),
-        UserModel(
+        User(
           id: 'farmer_001',
           email: 'farmer@agrosense.com',
           name: 'Jean Dupont Agriculteur',
@@ -218,9 +226,11 @@ class AuthService {
             'experienceYears': 15,
             'completedProjects': 3,
             'rating': 4.8,
-          },
+          }, 
+          createdAt: DateTime.now(), 
+          updatedAt: DateTime.now(),
         ).toJson(),
-        UserModel(
+        User(
           id: 'investor_001',
           email: 'investor@agrosense.com',
           name: 'Marie Investisseur',
@@ -235,7 +245,9 @@ class AuthService {
             'totalInvested': 75000.0,
             'activeInvestments': 2,
             'averageROI': 18.5,
-          },
+          }, 
+          createdAt: DateTime.now(), 
+          updatedAt: DateTime.now(),
         ).toJson(),
       ];
 

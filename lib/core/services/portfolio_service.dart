@@ -15,6 +15,7 @@ class PortfolioService {
         throw Exception('Utilisateur non authentifié');
       }
 
+      // URL spécifique pour les investissements de l'utilisateur
       final response = await http.get(
         Uri.parse('$_backendBaseUrl/users/$userId/investments'),
         headers: {
@@ -24,7 +25,7 @@ class PortfolioService {
       );
 
       print('📡 Réponse getPortfolioSummary: ${response.statusCode}');
-      print('📡 Body: ${response.body}');
+      print('👤 User ID demandé: $userId');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -35,15 +36,12 @@ class PortfolioService {
           throw Exception(data['error'] ?? 'Erreur inconnue');
         }
       } else if (response.statusCode == 404) {
-        // Si aucun investissement n'est trouvé, retourner des données par défaut
-        print('⚠️ Aucun investissement trouvé pour l\'utilisateur $userId');
         return _getDefaultPortfolioData();
       } else {
         throw Exception('Erreur HTTP ${response.statusCode}: ${response.body}');
       }
     } catch (e) {
       print('❌ Erreur getPortfolioSummary: $e');
-      // En cas d'erreur, retourner des données par défaut
       return _getDefaultPortfolioData();
     }
   }
@@ -95,6 +93,7 @@ class PortfolioService {
         throw Exception('Utilisateur non authentifié');
       }
 
+      // VÉRIFICATION CRITIQUE : S'assurer qu'on ne récupère que les projets du farmerId
       final response = await http.get(
         Uri.parse('$_backendBaseUrl/projects?farmerId=$farmerId'),
         headers: {
@@ -104,12 +103,15 @@ class PortfolioService {
       );
 
       print('📡 Réponse getFarmerPortfolio: ${response.statusCode}');
+      print('👤 Farmer ID demandé: $farmerId');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        return _formatFarmerPortfolio(data, farmerId);
+        
+        // FILTRAGE SUPPLÉMENTAIRE côté client pour sécurité
+        final filteredData = _filterFarmerProjects(data, farmerId);
+        return _formatFarmerPortfolio(filteredData, farmerId);
       } else if (response.statusCode == 404) {
-        // Si aucun projet n'est trouvé, retourner des données par défaut
         return _getDefaultFarmerData();
       } else {
         throw Exception('Erreur HTTP ${response.statusCode}: ${response.body}');
@@ -117,6 +119,37 @@ class PortfolioService {
     } catch (e) {
       print('❌ Erreur getFarmerPortfolio: $e');
       return _getDefaultFarmerData();
+    }
+  }
+
+  /// Filtrage supplémentaire pour s'assurer qu'on ne voit que ses projets
+  dynamic _filterFarmerProjects(dynamic data, String farmerId) {
+    try {
+      if (data is Map && data.containsKey('projects')) {
+        final projects = data['projects'] as List<dynamic>;
+        final filteredProjects = projects.where((project) {
+          final projectFarmerId = project['farmerId']?.toString() ?? '';
+          return projectFarmerId == farmerId;
+        }).toList();
+        
+        print('🔍 Filtrage projets: ${projects.length} → ${filteredProjects.length}');
+        return {'projects': filteredProjects};
+      }
+      
+      if (data is List) {
+        final filteredProjects = data.where((project) {
+          final projectFarmerId = project['farmerId']?.toString() ?? '';
+          return projectFarmerId == farmerId;
+        }).toList();
+        
+        print('🔍 Filtrage projets: ${data.length} → ${filteredProjects.length}');
+        return filteredProjects;
+      }
+      
+      return data;
+    } catch (e) {
+      print('❌ Erreur filtrage projets: $e');
+      return {'projects': []};
     }
   }
 
@@ -269,14 +302,17 @@ class PortfolioService {
         }
       }).toList();
       
-      // Calculer les métriques pour l'agriculteur
-      final totalProjects = projects.length;
-      final completedProjects = projects.where((p) => p.status == ProjectStatus.completed || p.status == ProjectStatus.harvested).length;
-      final activeProjects = projects.where((p) => p.status == ProjectStatus.funding || p.status == ProjectStatus.active).length;
+      // VÉRIFICATION FINALE : S'assurer que tous les projets appartiennent bien à l'agriculteur
+      final myProjects = projects.where((project) => project.farmerId == farmerId).toList();
       
-      final totalRaised = projects.fold<double>(0.0, (sum, project) => sum + project.currentInvestment);
-      final averageROI = projects.isNotEmpty 
-          ? projects.fold<double>(0.0, (sum, project) => sum + project.estimatedROI) / projects.length 
+      // Calculer les métriques pour l'agriculteur
+      final totalProjects = myProjects.length;
+      final completedProjects = myProjects.where((p) => p.status == ProjectStatus.completed || p.status == ProjectStatus.harvested).length;
+      final activeProjects = myProjects.where((p) => p.status == ProjectStatus.funding || p.status == ProjectStatus.active).length;
+      
+      final totalRaised = myProjects.fold<double>(0.0, (sum, project) => sum + project.currentInvestment);
+      final averageROI = myProjects.isNotEmpty 
+          ? myProjects.fold<double>(0.0, (sum, project) => sum + project.estimatedROI) / myProjects.length 
           : 0.0;
 
       final result = {
@@ -285,10 +321,12 @@ class PortfolioService {
         'activeProjects': activeProjects,
         'totalRaised': totalRaised,
         'averageROI': averageROI,
-        'projects': projects,
+        'projects': myProjects,
       };
 
       print('✅ Portfolio agriculteur formaté: $totalProjects projets, $totalRaised FCFA levés');
+      print('🛡️  Vérification sécurité: ${projects.length} projets initiaux → $totalProjects projets après filtrage');
+      
       return result;
     } catch (e) {
       print('❌ Erreur _formatFarmerPortfolio: $e');
