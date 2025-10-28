@@ -1,16 +1,14 @@
 import 'package:agridash/core/app_export.dart';
-import 'package:agridash/core/hedera_service.dart';
 import 'package:agridash/presentation/splash_screen/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize services
   await AuthService().initialize();
-  await HederaService().initialize();
   await AuthService().initializeDemoData();
 
-  runApp(MyApp());
+  runApp( MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -58,14 +56,14 @@ class MyApp extends StatelessWidget {
       onGenerateRoute: (settings) {
         final routes = AppRoutes.routes(context);
         final builder = routes[settings.name];
-        
+
         if (builder != null) {
           return MaterialPageRoute(
             builder: builder,
             settings: settings,
           );
         }
-        
+
         // Fallback to splash screen
         return MaterialPageRoute(
           builder: (context) => const SplashScreen(),

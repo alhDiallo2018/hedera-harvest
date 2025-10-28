@@ -57,20 +57,20 @@ class _FilterModalState extends State<FilterModal> {
       _selectedCategory = 'Tous';
       _minInvestment = 0;
       _maxInvestment = 100000;
-      _minROI = 0;
-      _maxROI = 50;
+      _minROI = -100;
+      _maxROI = 100;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
         ),
       ),
       child: Column(
@@ -89,74 +89,57 @@ class _FilterModalState extends State<FilterModal> {
                   color: AppConstants.textColor,
                 ),
               ),
-              TextButton(
-                onPressed: _resetFilters,
-                child: Text(
-                  'Réinitialiser',
-                  style: TextStyle(
-                    color: AppConstants.primaryColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+              IconButton(
+                onPressed: () => NavigationService().goBack(),
+                icon: const Icon(Icons.close),
               ),
             ],
           ),
-          
-          const SizedBox(height: 24),
-          
-          // Category Section
+
+          const SizedBox(height: 20),
+
+          // Catégorie
           Text(
-            'Type de Culture',
+            'Catégorie',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppConstants.textColor,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: widget.categories.map((category) {
-              final isSelected = _selectedCategory == category;
-              
-              return FilterChip(
-                selected: isSelected,
+              final isSelected = category == _selectedCategory;
+              return ChoiceChip(
                 label: Text(category),
+                selected: isSelected,
                 onSelected: (selected) {
                   setState(() {
-                    _selectedCategory = selected ? category : 'Tous';
+                    _selectedCategory = category;
                   });
                 },
-                backgroundColor: Colors.white,
-                selectedColor: AppConstants.primaryColor.withOpacity(0.1),
-                checkmarkColor: AppConstants.primaryColor,
-                labelStyle: TextStyle(
-                  color: isSelected ? AppConstants.primaryColor : AppConstants.textColor,
-                  fontWeight: FontWeight.w500,
-                ),
-                side: BorderSide(
-                  color: isSelected ? AppConstants.primaryColor : Colors.grey.shade300,
-                ),
               );
             }).toList(),
           ),
-          
-          const SizedBox(height: 24),
-          
-          // Investment Range
+
+          const SizedBox(height: 20),
+
+          // Investissement
           Text(
-            'Investissement (FCFA)',
+            'Investissement par token (FCFA)',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
               color: AppConstants.textColor,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           RangeSlider(
             values: RangeValues(_minInvestment, _maxInvestment),
-            min: 0,
+            min: -100,
             max: 100000,
             divisions: 10,
             labels: RangeLabels(
@@ -170,17 +153,10 @@ class _FilterModalState extends State<FilterModal> {
               });
             },
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('${_minInvestment.toInt()} FCFA'),
-              Text('${_maxInvestment.toInt()} FCFA'),
-            ],
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // ROI Range
+
+          const SizedBox(height: 20),
+
+          // ROI
           Text(
             'ROI Estimé (%)',
             style: TextStyle(
@@ -189,7 +165,7 @@ class _FilterModalState extends State<FilterModal> {
               color: AppConstants.textColor,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           RangeSlider(
             values: RangeValues(_minROI, _maxROI),
             min: 0,
@@ -206,38 +182,29 @@ class _FilterModalState extends State<FilterModal> {
               });
             },
           ),
+
+          const SizedBox(height: 30),
+
+          // Boutons
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('${_minROI.toInt()}%'),
-              Text('${_maxROI.toInt()}%'),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _resetFilters,
+                  child: const Text('Réinitialiser'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: _applyFilters,
+                  child: const Text('Appliquer'),
+                ),
+              ),
             ],
           ),
-          
-          const SizedBox(height: 32),
-          
-          // Apply Button
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: _applyFilters,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppConstants.primaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'Appliquer les filtres',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
+
+          const SizedBox(height: 20),
         ],
       ),
     );

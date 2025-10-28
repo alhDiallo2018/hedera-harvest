@@ -5,6 +5,7 @@ class ProjectBasicInfoForm extends StatefulWidget {
   final String title;
   final String description;
   final CropType selectedCrop;
+  final Map<CropType, Map<String, dynamic>> cropData;
   final Function(String) onTitleChanged;
   final Function(String) onDescriptionChanged;
   final Function(CropType) onCropChanged;
@@ -14,6 +15,7 @@ class ProjectBasicInfoForm extends StatefulWidget {
     required this.title,
     required this.description,
     required this.selectedCrop,
+    required this.cropData,
     required this.onTitleChanged,
     required this.onDescriptionChanged,
     required this.onCropChanged,
@@ -27,8 +29,10 @@ class _ProjectBasicInfoFormState extends State<ProjectBasicInfoForm> {
   void _showCropTypeBottomSheet() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (context) => CropTypeBottomSheet(
         selectedCrop: widget.selectedCrop,
+        cropData: widget.cropData,
         onCropSelected: (crop) {
           widget.onCropChanged(crop);
           NavigationService().goBack();
@@ -38,30 +42,13 @@ class _ProjectBasicInfoFormState extends State<ProjectBasicInfoForm> {
   }
 
   String _getCropDisplayName(CropType crop) {
-    switch (crop) {
-      case CropType.maize:
-        return 'Maïs';
-      case CropType.rice:
-        return 'Riz';
-      case CropType.tomato:
-        return 'Tomate';
-      case CropType.coffee:
-        return 'Café';
-      case CropType.cocoa:
-        return 'Cacao';
-      case CropType.cotton:
-        return 'Coton';
-      case CropType.wheat:
-        return 'Blé';
-      case CropType.soybean:
-        return 'Soja';
-      default:
-        return 'Autre';
-    }
+    return widget.cropData[crop]?['name'] ?? 'Autre';
   }
 
   @override
   Widget build(BuildContext context) {
+    final cropColor = widget.cropData[widget.selectedCrop]?['color'] ?? Colors.grey;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -79,10 +66,13 @@ class _ProjectBasicInfoFormState extends State<ProjectBasicInfoForm> {
         // Project Title
         TextFormField(
           initialValue: widget.title,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Titre du projet',
             hintText: 'Ex: Culture de Maïs Bio en Normandie',
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: cropColor),
+            ),
           ),
           maxLength: 100,
           onChanged: widget.onTitleChanged,
@@ -123,17 +113,40 @@ class _ProjectBasicInfoFormState extends State<ProjectBasicInfoForm> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.eco,
-                      color: AppConstants.primaryColor,
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: cropColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Text(
+                          widget.cropData[widget.selectedCrop]?['emoji'] ?? '🌱',
+                          style: const TextStyle(fontSize: 20),
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 12),
-                    Text(
-                      _getCropDisplayName(widget.selectedCrop),
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: AppConstants.textColor,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _getCropDisplayName(widget.selectedCrop),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: AppConstants.textColor,
+                          ),
+                        ),
+                        Text(
+                          '${widget.cropData[widget.selectedCrop]?['season'] ?? ''} • ${widget.cropData[widget.selectedCrop]?['duration'] ?? ''}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppConstants.textColor.withOpacity(0.6),
+                          ),
+                        ),
+                      ],
                     ),
                     const Spacer(),
                     const Icon(Icons.arrow_drop_down, color: Colors.grey),
@@ -149,11 +162,14 @@ class _ProjectBasicInfoFormState extends State<ProjectBasicInfoForm> {
         // Project Description
         TextFormField(
           initialValue: widget.description,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Description du projet',
             hintText: 'Décrivez votre projet en détail...',
-            border: OutlineInputBorder(),
+            border: const OutlineInputBorder(),
             alignLabelWithHint: true,
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: cropColor),
+            ),
           ),
           maxLines: 5,
           maxLength: 1000,
@@ -175,7 +191,7 @@ class _ProjectBasicInfoFormState extends State<ProjectBasicInfoForm> {
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: AppConstants.primaryColor.withOpacity(0.05),
+            color: cropColor.withOpacity(0.05),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
@@ -183,7 +199,7 @@ class _ProjectBasicInfoFormState extends State<ProjectBasicInfoForm> {
               Icon(
                 Icons.lightbulb_outline,
                 size: 16,
-                color: AppConstants.primaryColor,
+                color: cropColor,
               ),
               const SizedBox(width: 8),
               Expanded(

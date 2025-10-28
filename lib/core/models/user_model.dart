@@ -6,6 +6,7 @@ class UserModel {
   final String? phone;
   final String? location;
   final double balance;
+  final String? token;
   final DateTime joinedDate;
   final Map<String, dynamic>? profileData;
 
@@ -19,6 +20,7 @@ class UserModel {
     this.balance = 0.0,
     required this.joinedDate,
     this.profileData,
+    this.token,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class UserModel {
       name: json['name'],
       role: UserRole.values.firstWhere((e) => e.name == json['role']),
       phone: json['phone'],
+      token: json['token'],
       location: json['location'],
       balance: (json['balance'] ?? 0).toDouble(),
       joinedDate: DateTime.parse(json['joinedDate']),
@@ -43,6 +46,7 @@ class UserModel {
       'role': role.name,
       'phone': phone,
       'location': location,
+      'token': token,
       'balance': balance,
       'joinedDate': joinedDate.toIso8601String(),
       'profileData': profileData,
@@ -57,6 +61,7 @@ class UserModel {
     String? phone,
     String? location,
     double? balance,
+    String? token,
     DateTime? joinedDate,
     Map<String, dynamic>? profileData,
   }) {
@@ -70,6 +75,7 @@ class UserModel {
       balance: balance ?? this.balance,
       joinedDate: joinedDate ?? this.joinedDate,
       profileData: profileData ?? this.profileData,
+      token: token ?? this.token,
     );
   }
 }

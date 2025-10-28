@@ -2,72 +2,15 @@ import 'package:agridash/core/app_export.dart';
 
 class CropTypeBottomSheet extends StatelessWidget {
   final CropType selectedCrop;
+  final Map<CropType, Map<String, dynamic>> cropData;
   final Function(CropType) onCropSelected;
 
   const CropTypeBottomSheet({
     super.key,
     required this.selectedCrop,
+    required this.cropData,
     required this.onCropSelected,
   });
-
-  Map<CropType, Map<String, dynamic>> get _cropData {
-    return {
-      CropType.maize: {
-        'name': 'Maïs',
-        'emoji': '🌽',
-        'season': 'Printemps',
-        'duration': '6 mois',
-      },
-      CropType.rice: {
-        'name': 'Riz',
-        'emoji': '🌾',
-        'season': 'Saison des pluies',
-        'duration': '5 mois',
-      },
-      CropType.tomato: {
-        'name': 'Tomate',
-        'emoji': '🍅',
-        'season': 'Printemps/Été',
-        'duration': '4 mois',
-      },
-      CropType.coffee: {
-        'name': 'Café',
-        'emoji': '☕',
-        'season': 'Annuelle',
-        'duration': '9 mois',
-      },
-      CropType.cocoa: {
-        'name': 'Cacao',
-        'emoji': '🍫',
-        'season': 'Annuelle',
-        'duration': '8 mois',
-      },
-      CropType.cotton: {
-        'name': 'Coton',
-        'emoji': '👕',
-        'season': 'Été',
-        'duration': '7 mois',
-      },
-      CropType.wheat: {
-        'name': 'Blé',
-        'emoji': '🌾',
-        'season': 'Automne',
-        'duration': '9 mois',
-      },
-      CropType.soybean: {
-        'name': 'Soja',
-        'emoji': '🥜',
-        'season': 'Printemps',
-        'duration': '5 mois',
-      },
-      CropType.other: {
-        'name': 'Autre',
-        'emoji': '🌱',
-        'season': 'Variable',
-        'duration': 'Variable',
-      },
-    };
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,10 +57,11 @@ class CropTypeBottomSheet extends StatelessWidget {
           // Crop List
           Expanded(
             child: ListView(
-              children: _cropData.entries.map((entry) {
+              children: cropData.entries.map((entry) {
                 final crop = entry.key;
                 final data = entry.value;
                 final isSelected = selectedCrop == crop;
+                final cropColor = data['color'] ?? Colors.grey;
                 
                 return ListTile(
                   contentPadding: const EdgeInsets.symmetric(vertical: 8),
@@ -126,7 +70,7 @@ class CropTypeBottomSheet extends StatelessWidget {
                     height: 50,
                     decoration: BoxDecoration(
                       color: isSelected 
-                          ? AppConstants.primaryColor.withOpacity(0.1) 
+                          ? cropColor.withOpacity(0.1) 
                           : Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -153,7 +97,7 @@ class CropTypeBottomSheet extends StatelessWidget {
                   trailing: isSelected
                       ? Icon(
                           Icons.check_circle,
-                          color: AppConstants.primaryColor,
+                          color: cropColor,
                         )
                       : null,
                   onTap: () => onCropSelected(crop),

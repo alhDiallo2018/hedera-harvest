@@ -1,9 +1,9 @@
 import 'package:agridash/core/app_export.dart';
 
-class FilterChipsRow extends StatefulWidget {
+class FilterChipsRow extends StatelessWidget {
   final String selectedCategory;
   final List<String> categories;
-  final Function(String) onCategoryChanged;
+  final ValueChanged<String> onCategoryChanged;
 
   const FilterChipsRow({
     super.key,
@@ -13,42 +13,30 @@ class FilterChipsRow extends StatefulWidget {
   });
 
   @override
-  State<FilterChipsRow> createState() => _FilterChipsRowState();
-}
-
-class _FilterChipsRowState extends State<FilterChipsRow> {
-  @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       color: Colors.white,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
-          children: widget.categories.map((category) {
-            final isSelected = widget.selectedCategory == category;
-            
+          children: categories.map((category) {
+            final isSelected = category == selectedCategory;
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: FilterChip(
-                selected: isSelected,
                 label: Text(category),
+                selected: isSelected,
                 onSelected: (selected) {
-                  widget.onCategoryChanged(selected ? category : 'Tous');
+                  onCategoryChanged(category);
                 },
-                backgroundColor: Colors.white,
+                backgroundColor: Colors.grey.shade100,
                 selectedColor: AppConstants.primaryColor.withOpacity(0.1),
-                checkmarkColor: AppConstants.primaryColor,
                 labelStyle: TextStyle(
-                  color: isSelected ? AppConstants.primaryColor : AppConstants.textColor,
-                  fontWeight: FontWeight.w500,
+                  color: isSelected ? AppConstants.primaryColor : Colors.grey.shade700,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
-                side: BorderSide(
-                  color: isSelected ? AppConstants.primaryColor : Colors.grey.shade300,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                checkmarkColor: AppConstants.primaryColor,
               ),
             );
           }).toList(),

@@ -80,6 +80,7 @@ class PerformanceChartWidget extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: _chartData.asMap().entries.map((entry) {
+                // ignore: unused_local_variable
                 final index = entry.key;
                 final data = entry.value;
                 final height = (data['value'] as int) / _maxValue * 150;

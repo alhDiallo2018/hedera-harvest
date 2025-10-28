@@ -37,7 +37,7 @@ class _DashboardHomeState extends State<DashboardHome> {
           _projects = await _projectService.getProjects(farmerId: user.id);
         } else if (user.role == UserRole.investor) {
           _portfolioSummary = await _portfolioService.getPortfolioSummary(user.id);
-          _projects = await _projectService.getAvailableProjects();
+          _projects = await _projectService.getProjects();
         } else if (user.role == UserRole.admin) {
           _projects = await _projectService.getProjects();
           _portfolioSummary = {

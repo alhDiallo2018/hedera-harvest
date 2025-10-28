@@ -3,7 +3,7 @@ import 'package:agridash/core/app_export.dart';
 class SortBottomSheet extends StatelessWidget {
   final List<String> sortOptions;
   final String selectedSort;
-  final Function(String) onSortSelected;
+  final ValueChanged<String> onSortSelected;
 
   const SortBottomSheet({
     super.key,
@@ -15,14 +15,7 @@ class SortBottomSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-      ),
+      padding: const EdgeInsets.all(20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -30,30 +23,21 @@ class SortBottomSheet extends StatelessWidget {
           Text(
             'Trier par',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
               color: AppConstants.textColor,
             ),
           ),
           const SizedBox(height: 16),
           ...sortOptions.map((option) {
-            final isSelected = selectedSort == option;
-            
             return ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
-                color: isSelected ? AppConstants.primaryColor : Colors.grey.shade400,
-              ),
-              title: Text(
-                option,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: AppConstants.textColor,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                ),
-              ),
-              onTap: () => onSortSelected(option),
+              title: Text(option),
+              trailing: option == selectedSort
+                  ? Icon(Icons.check, color: AppConstants.primaryColor)
+                  : null,
+              onTap: () {
+                onSortSelected(option);
+              },
             );
           }).toList(),
         ],

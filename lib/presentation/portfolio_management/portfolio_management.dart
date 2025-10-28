@@ -13,6 +13,7 @@ class _PortfolioManagementState extends State<PortfolioManagement> {
   
   Map<String, dynamic> _portfolioData = {};
   bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -23,16 +24,23 @@ class _PortfolioManagementState extends State<PortfolioManagement> {
   Future<void> _loadPortfolioData() async {
     setState(() {
       _isLoading = true;
+      _errorMessage = null;
     });
 
     try {
       final user = _authService.currentUser;
       if (user != null) {
+        print('👤 Chargement du portefeuille pour: ${user.name} (${user.role})');
+        
         if (user.role == UserRole.farmer) {
           _portfolioData = await _portfolioService.getFarmerPortfolio(user.id);
+          print('✅ Données agriculteur chargées: ${_portfolioData.length} projets');
         } else if (user.role == UserRole.investor) {
           _portfolioData = await _portfolioService.getPortfolioSummary(user.id);
+          print('✅ Données investisseur chargées: ${_portfolioData['projects']?.length ?? 0} investissements');
         }
+      } else {
+        throw Exception('Utilisateur non connecté');
       }
 
       setState(() {
@@ -41,8 +49,9 @@ class _PortfolioManagementState extends State<PortfolioManagement> {
     } catch (e) {
       setState(() {
         _isLoading = false;
+        _errorMessage = e.toString();
       });
-      NavigationService().showErrorDialog('Erreur lors du chargement du portefeuille: $e');
+      print('❌ Erreur chargement portefeuille: $e');
     }
   }
 
@@ -58,98 +67,147 @@ class _PortfolioManagementState extends State<PortfolioManagement> {
       backgroundColor: AppConstants.backgroundColor,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : CustomScrollView(
-              slivers: [
-                // Header
-                SliverAppBar(
-                  backgroundColor: Colors.white,
-                  elevation: 0,
-                  title: Text(
-                    user?.role == UserRole.farmer ? 'Mes Projets' : 'Mon Portefeuille',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppConstants.textColor,
-                    ),
-                  ),
-                  actions: [
-                    IconButton(
-                      onPressed: _loadPortfolioData,
-                      icon: const Icon(Icons.refresh),
-                      color: AppConstants.textColor,
-                    ),
-                  ],
-                ),
-
-                // Portfolio Summary
-                SliverToBoxAdapter(
-                  child: _buildPortfolioSummary(),
-                ),
-
-                // Projects List
-                if (_portfolioData['projects'] != null)
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final project = _portfolioData['projects'][index];
-                        return _buildProjectCard(project);
-                      },
-                      childCount: (_portfolioData['projects'] as List).length,
-                    ),
-                  ),
-
-                // Empty State
-                if (_portfolioData['projects'] == null || (_portfolioData['projects'] as List).isEmpty)
-                  SliverFillRemaining(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.business_center_outlined,
-                          size: 80,
-                          color: Colors.grey.shade300,
+          : _errorMessage != null
+              ? _buildErrorState()
+              : CustomScrollView(
+                  slivers: [
+                    // Header
+                    SliverAppBar(
+                      backgroundColor: Colors.white,
+                      elevation: 0,
+                      title: Text(
+                        user?.role == UserRole.farmer ? 'Mes Projets' : 'Mon Portefeuille',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppConstants.textColor,
                         ),
-                        const SizedBox(height: 16),
-                        Text(
-                          user?.role == UserRole.farmer 
-                              ? 'Aucun projet créé'
-                              : 'Aucun investissement',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppConstants.textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          user?.role == UserRole.farmer
-                              ? 'Commencez par créer votre premier projet agricole'
-                              : 'Découvrez des opportunités d\'investissement',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: AppConstants.textColor.withOpacity(0.6),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: () {
-                            if (user?.role == UserRole.farmer) {
-                              NavigationService().toProjectCreation();
-                            } else {
-                              NavigationService().toMarketplace();
-                            }
-                          },
-                          child: Text(
-                            user?.role == UserRole.farmer 
-                                ? 'Créer un projet' 
-                                : 'Explorer le marché',
-                          ),
+                      ),
+                      actions: [
+                        IconButton(
+                          onPressed: _loadPortfolioData,
+                          icon: const Icon(Icons.refresh),
+                          color: AppConstants.textColor,
                         ),
                       ],
                     ),
-                  ),
-              ],
+
+                    // Portfolio Summary
+                    SliverToBoxAdapter(
+                      child: _buildPortfolioSummary(),
+                    ),
+
+                    // Projects List
+                    if (_portfolioData['projects'] != null && (_portfolioData['projects'] as List).isNotEmpty)
+                      SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final project = _portfolioData['projects'][index];
+                            return _buildProjectCard(project);
+                          },
+                          childCount: (_portfolioData['projects'] as List).length,
+                        ),
+                      ),
+
+                    // Empty State
+                    if (_portfolioData['projects'] == null || (_portfolioData['projects'] as List).isEmpty)
+                      SliverFillRemaining(
+                        child: _buildEmptyState(),
+                      ),
+                  ],
+                ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 64,
+            color: Colors.red.shade300,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Erreur de chargement',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppConstants.textColor,
             ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32.0),
+            child: Text(
+              _errorMessage ?? 'Une erreur est survenue',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppConstants.textColor.withOpacity(0.6),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: _loadPortfolioData,
+            child: const Text('Réessayer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    final user = _authService.currentUser;
+    
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.business_center_outlined,
+          size: 80,
+          color: Colors.grey.shade300,
+        ),
+        const SizedBox(height: 16),
+        Text(
+          user?.role == UserRole.farmer 
+              ? 'Aucun projet créé'
+              : 'Aucun investissement',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppConstants.textColor,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          user?.role == UserRole.farmer
+              ? 'Commencez par créer votre premier projet agricole'
+              : 'Découvrez des opportunités d\'investissement',
+          style: TextStyle(
+            fontSize: 14,
+            color: AppConstants.textColor.withOpacity(0.6),
+          ),
+        ),
+        const SizedBox(height: 24),
+        ElevatedButton(
+          onPressed: () {
+            if (user?.role == UserRole.farmer) {
+              NavigationService().toProjectCreation();
+            } else {
+              NavigationService().toMarketplace();
+            }
+          },
+          child: Text(
+            user?.role == UserRole.farmer 
+                ? 'Créer un projet' 
+                : 'Explorer le marché',
+          ),
+        ),
+      ],
     );
   }
 
@@ -382,9 +440,7 @@ class _PortfolioManagementState extends State<PortfolioManagement> {
     );
   }
 
-  Widget _buildProjectCard(dynamic project) {
-    final cropProject = project as CropProject;
-    
+  Widget _buildProjectCard(CropProject project) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -414,7 +470,7 @@ class _PortfolioManagementState extends State<PortfolioManagement> {
           ),
         ),
         title: Text(
-          cropProject.title,
+          project.title,
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -426,7 +482,7 @@ class _PortfolioManagementState extends State<PortfolioManagement> {
           children: [
             const SizedBox(height: 4),
             Text(
-              '${cropProject.progressPercentage.toStringAsFixed(0)}% financé • ${cropProject.currentInvestment.toStringAsFixed(0)} FCFA',
+              '${project.progressPercentage.toStringAsFixed(0)}% financé • ${project.currentInvestment.toStringAsFixed(0)} FCFA',
               style: TextStyle(
                 fontSize: 14,
                 color: AppConstants.textColor.withOpacity(0.6),
@@ -434,10 +490,10 @@ class _PortfolioManagementState extends State<PortfolioManagement> {
             ),
             const SizedBox(height: 8),
             LinearProgressIndicator(
-              value: cropProject.progressPercentage / 100,
+              value: project.progressPercentage / 100,
               backgroundColor: Colors.grey.shade200,
               valueColor: AlwaysStoppedAnimation<Color>(
-                cropProject.progressPercentage >= 100 
+                project.progressPercentage >= 100 
                     ? AppConstants.successColor 
                     : AppConstants.primaryColor,
               ),
@@ -449,7 +505,7 @@ class _PortfolioManagementState extends State<PortfolioManagement> {
           size: 16,
           color: AppConstants.textColor.withOpacity(0.5),
         ),
-        onTap: () => _handleProjectTap(cropProject.id),
+        onTap: () => _handleProjectTap(project.id),
       ),
     );
   }

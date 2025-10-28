@@ -1,231 +1,65 @@
 import 'package:agridash/core/app_export.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SuccessModal extends StatelessWidget {
-  final CropProject project;
+  final String projectTitle;
   final String tokenId;
   final VoidCallback onContinue;
 
   const SuccessModal({
     super.key,
-    required this.project,
+    required this.projectTitle,
     required this.tokenId,
     required this.onContinue,
   });
 
+  String get _tokenExplorer => 'https://hashscan.io/testnet/token/$tokenId';
+
+  Future<void> _openExplorer() async {
+    final uri = Uri.parse(_tokenExplorer);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Success Icon
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppConstants.successColor.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.check_circle,
-                size: 40,
-                color: AppConstants.successColor,
-              ),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.check_circle_outline, color: Colors.green, size: 64),
+          const SizedBox(height: 12),
+          Text('Projet créé', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text(projectTitle, style: const TextStyle(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 12),
+          SelectableText('Token ID: $tokenId', textAlign: TextAlign.center),
+          const SizedBox(height: 12),
+          Wrap(spacing: 8, children: [
+            ElevatedButton.icon(
+              onPressed: _openExplorer,
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('Voir sur HashScan'),
             ),
-            
-            const SizedBox(height: 24),
-            
-            // Title
-            Text(
-              'Projet créé avec succès !',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppConstants.textColor,
-              ),
-              textAlign: TextAlign.center,
+            OutlinedButton.icon(
+              onPressed: () {
+                // Share link or copy to clipboard
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lien copié !')));
+              },
+              icon: const Icon(Icons.copy),
+              label: const Text('Copier l\'ID'),
             ),
-            
-            const SizedBox(height: 16),
-            
-            // Message
-            Text(
-              'Votre projet "${project.title}" a été créé et est maintenant visible sur la marketplace.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: AppConstants.textColor.withOpacity(0.7),
-                height: 1.5,
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Project Details
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  _buildDetailRow('Token ID', tokenId),
-                  _buildDetailRow('Investissement nécessaire', '${project.totalInvestmentNeeded.toStringAsFixed(0)} FCFA'),
-                  _buildDetailRow('Tokens créés', '${project.totalTokens} tokens'),
-                  _buildDetailRow('Prix du token', '${project.tokenPrice} FCFA'),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Next Steps
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppConstants.primaryColor.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Prochaines étapes :',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppConstants.primaryColor,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildNextStep('Partagez votre projet sur les réseaux sociaux'),
-                  _buildNextStep('Suivez les investissements en temps réel'),
-                  _buildNextStep('Ajoutez des mises à jour régulières'),
-                  _buildNextStep('Préparez-vous pour la récolte'),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Actions
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      NavigationService().toProjectDetails(project.id);
-                      onContinue();
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppConstants.primaryColor,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      side: BorderSide(color: AppConstants.primaryColor),
-                    ),
-                    child: const Text('Voir le projet'),
-                  ),
-                ),
-                
-                const SizedBox(width: 12),
-                
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      NavigationService().toMarketplace();
-                      onContinue();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppConstants.primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text('Marketplace'),
-                  ),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 8),
-            
-            TextButton(
-              onPressed: onContinue,
-              child: Text(
-                'Retour au tableau de bord',
-                style: TextStyle(
-                  color: AppConstants.textColor.withOpacity(0.6),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: AppConstants.textColor.withOpacity(0.7),
-            ),
+          ]),
+          const SizedBox(height: 12),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(44)),
+            onPressed: onContinue,
+            child: const Text('Terminer'),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppConstants.textColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNextStep(String text) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.check_circle_outline,
-            size: 16,
-            color: AppConstants.primaryColor,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 12,
-                color: AppConstants.textColor.withOpacity(0.7),
-              ),
-            ),
-          ),
-        ],
+        ]),
       ),
     );
   }

@@ -1,6 +1,6 @@
 {
     "version": 2,
-    "name": "agridash",
+    "name": "agro-sense",
     "builds": [
       {
         "src": "build/web/**",

@@ -1,103 +1,52 @@
 import 'package:agridash/core/app_export.dart';
 
-class ProjectFormHeader extends StatelessWidget {
+class ProjectFormHeader extends StatelessWidget implements PreferredSizeWidget {
   final int currentPage;
   final int totalPages;
   final VoidCallback onBack;
+  final Color cropColor;
 
   const ProjectFormHeader({
     super.key,
     required this.currentPage,
     required this.totalPages,
     required this.onBack,
+    required this.cropColor,
   });
-
-  String _getPageTitle(int page) {
-    switch (page) {
-      case 0:
-        return 'Informations de base';
-      case 1:
-        return 'Détails du projet';
-      case 2:
-        return 'Finalisation';
-      default:
-        return 'Création de projet';
-    }
-  }
-
-  String _getPageSubtitle(int page) {
-    switch (page) {
-      case 0:
-        return 'Décrivez votre projet agricole';
-      case 1:
-        return 'Définissez les détails et le financement';
-      case 2:
-        return 'Ajoutez les informations finales';
-      default:
-        return 'Créez votre projet d\'agriculture';
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+    final double progress = (currentPage + 1) / totalPages;
+    return AppBar(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.black87),
+        onPressed: onBack,
       ),
-      child: Column(
+      title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Back button and progress
-          Row(
-            children: [
-              IconButton(
-                onPressed: onBack,
-                icon: const Icon(Icons.arrow_back_rounded),
-                color: AppConstants.textColor,
-              ),
-              const Spacer(),
-              Text(
-                'Étape ${currentPage + 1}/$totalPages',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppConstants.textColor.withOpacity(0.6),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 8),
-          
-          // Title and subtitle
-          Text(
-            _getPageTitle(currentPage),
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppConstants.textColor,
-            ),
-          ),
-          
+          Text('Créer un projet', style: TextStyle(color: AppConstants.textColor, fontWeight: FontWeight.w600)),
           const SizedBox(height: 4),
-          
-          Text(
-            _getPageSubtitle(currentPage),
-            style: TextStyle(
-              fontSize: 16,
-              color: AppConstants.textColor.withOpacity(0.6),
-            ),
-          ),
+          Text('Étape ${currentPage + 1} sur $totalPages', style: const TextStyle(fontSize: 12, color: Colors.black54)),
         ],
+      ),
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(6),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: LinearProgressIndicator(
+            value: progress,
+            backgroundColor: Colors.grey.shade200,
+            valueColor: AlwaysStoppedAnimation<Color>(cropColor),
+            minHeight: 6,
+          ),
+        ),
       ),
     );
   }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(72);
 }

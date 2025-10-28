@@ -15,101 +15,62 @@ class MarketplaceHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
+      child: Row(
         children: [
-          // Title and Back Button
-          Row(
-            children: [
-              IconButton(
-                onPressed: () => NavigationService().goBack(),
-                icon: const Icon(Icons.arrow_back_rounded),
-                color: AppConstants.textColor,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Marketplace',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppConstants.textColor,
+          // Titre et compteur
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Marché d\'Investissement',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppConstants.textColor,
+                  ),
                 ),
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: () {
-                  NavigationService().showSuccessDialog('Recherche en cours de développement');
-                },
-                icon: const Icon(Icons.search),
-                color: AppConstants.textColor,
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 16),
-          
-          // Stats and Actions
-          Row(
-            children: [
-              // Project Count
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppConstants.primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  '$projectCount projets',
+                const SizedBox(height: 2),
+                Text(
+                  '$projectCount projets disponibles',
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppConstants.primaryColor,
+                    color: AppConstants.textColor.withOpacity(0.6),
                   ),
                 ),
-              ),
-              
-              const Spacer(),
-              
-              // Sort Button
-              OutlinedButton.icon(
-                onPressed: onSortTap,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppConstants.textColor,
-                  side: BorderSide(color: Colors.grey.shade300),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                icon: const Icon(Icons.sort, size: 16),
-                label: const Text('Trier'),
-              ),
-              
-              const SizedBox(width: 8),
-              
-              // Filter Button
-              OutlinedButton.icon(
-                onPressed: onFilterTap,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppConstants.textColor,
-                  side: BorderSide(color: Colors.grey.shade300),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                icon: const Icon(Icons.filter_list, size: 16),
-                label: const Text('Filtrer'),
-              ),
-            ],
+              ],
+            ),
+          ),
+
+          // Bouton de tri
+          IconButton(
+            onPressed: onSortTap,
+            icon: Icon(
+              Icons.sort,
+              color: AppConstants.primaryColor,
+            ),
+            tooltip: 'Trier les projets',
+          ),
+
+          // Bouton de filtre
+          IconButton(
+            onPressed: onFilterTap,
+            icon: Icon(
+              Icons.filter_list,
+              color: AppConstants.primaryColor,
+            ),
+            tooltip: 'Filtrer les projets',
           ),
         ],
       ),

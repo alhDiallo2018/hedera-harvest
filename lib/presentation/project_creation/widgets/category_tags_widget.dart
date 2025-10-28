@@ -2,43 +2,24 @@ import 'package:agridash/core/app_export.dart';
 
 class CategoryTagsWidget extends StatelessWidget {
   final CropType selectedCrop;
-  final Function(CropType) onCropChanged;
+  final Set<String> selectedPractices;
+  final List<String> sustainablePractices;
+  final String cropCategory;
+  final Color cropColor;
+  final Function(String) onPracticeSelected;
 
   const CategoryTagsWidget({
     super.key,
     required this.selectedCrop,
-    required this.onCropChanged,
+    required this.selectedPractices,
+    required this.sustainablePractices,
+    required this.cropCategory,
+    required this.cropColor,
+    required this.onPracticeSelected,
   });
-
-  Map<CropType, String> get _cropTags {
-    return {
-      CropType.maize: 'Céréales',
-      CropType.rice: 'Céréales',
-      CropType.wheat: 'Céréales',
-      CropType.tomato: 'Légumes',
-      CropType.coffee: 'Plantations',
-      CropType.cocoa: 'Plantations',
-      CropType.cotton: 'Fibres',
-      CropType.soybean: 'Légumineuses',
-      CropType.other: 'Autre',
-    };
-  }
-
-  List<String> get _sustainablePractices {
-    return [
-      'Agriculture Biologique',
-      'Rotation des Cultures',
-      'Gestion de l\'Eau',
-      'Sols Durables',
-      'Biodiversité',
-      'Énergie Renouvelable',
-    ];
-  }
 
   @override
   Widget build(BuildContext context) {
-    final category = _cropTags[selectedCrop] ?? 'Autre';
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -53,21 +34,22 @@ class CategoryTagsWidget extends StatelessWidget {
         
         const SizedBox(height: 16),
         
-        // Main Category
-        Container(
+        // Main Category avec animation
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppConstants.primaryColor.withOpacity(0.05),
+            color: cropColor.withOpacity(0.05),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: AppConstants.primaryColor.withOpacity(0.2),
+              color: cropColor.withOpacity(0.3),
             ),
           ),
           child: Row(
             children: [
               Icon(
                 Icons.category,
-                color: AppConstants.primaryColor,
+                color: cropColor,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -82,14 +64,29 @@ class CategoryTagsWidget extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      category,
+                      cropCategory,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: AppConstants.primaryColor,
+                        color: cropColor,
                       ),
                     ),
                   ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: cropColor,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'Recommandé',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ],
@@ -123,22 +120,27 @@ class CategoryTagsWidget extends StatelessWidget {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children: _sustainablePractices.map((practice) {
-            return FilterChip(
-              selected: false,
-              label: Text(practice),
-              onSelected: (selected) {
-                // Handle practice selection
-              },
-              backgroundColor: Colors.white,
-              selectedColor: AppConstants.successColor.withOpacity(0.1),
-              checkmarkColor: AppConstants.successColor,
-              labelStyle: const TextStyle(
-                color: Colors.black87,
-                fontWeight: FontWeight.w500,
-              ),
-              side: BorderSide(
-                color: Colors.grey.shade300,
+          children: sustainablePractices.map((practice) {
+            final isSelected = selectedPractices.contains(practice);
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              child: FilterChip(
+                selected: isSelected,
+                label: Text(practice),
+                onSelected: (selected) {
+                  onPracticeSelected(practice);
+                },
+                backgroundColor: Colors.white,
+                selectedColor: cropColor.withOpacity(0.1),
+                checkmarkColor: cropColor,
+                labelStyle: TextStyle(
+                  color: isSelected ? cropColor : Colors.black87,
+                  fontWeight: FontWeight.w500,
+                ),
+                side: BorderSide(
+                  color: isSelected ? cropColor : Colors.grey.shade300,
+                  width: isSelected ? 1.5 : 1,
+                ),
               ),
             );
           }).toList(),
@@ -146,11 +148,43 @@ class CategoryTagsWidget extends StatelessWidget {
         
         const SizedBox(height: 16),
         
+        // Stats based on selections
+        if (selectedPractices.isNotEmpty) ...[
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.trending_up,
+                  size: 16,
+                  color: Colors.green.shade600,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Avec ${selectedPractices.length} pratique(s) durable(s), votre projet attire ${20 + (selectedPractices.length * 5)}% plus d\'investissements',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.green.shade800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+        ],
+        
         // Certification Info
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.green.shade50,
+            color: Colors.blue.shade50,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
@@ -158,15 +192,15 @@ class CategoryTagsWidget extends StatelessWidget {
               Icon(
                 Icons.verified_outlined,
                 size: 16,
-                color: Colors.green.shade600,
+                color: Colors.blue.shade600,
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Les projets durables attirent 40% plus d\'investissements',
+                  'Les projets durables avec pratiques certifiées ont un ROI moyen de 35%',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.green.shade800,
+                    color: Colors.blue.shade800,
                   ),
                 ),
               ),
