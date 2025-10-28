@@ -2,7 +2,7 @@ import 'package:agridash/core/index.dart';
 import 'package:http/http.dart' as http;
 
 class PortfolioService {
-  static const String _backendBaseUrl = 'http://localhost:3000/api';
+  static const String _backendBaseUrl = 'https://backend-agrosense-hedera.onrender.com/api';
   static const String _apiKey = 'change_this_api_key_to_a_strong_value';
 
   /// Récupère le portefeuille d'un investisseur
